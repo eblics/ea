@@ -69,7 +69,7 @@ int OnCalculate(const int rates_total,
    ArraySetAsSeries(ExtXBuffer,false);
    ArraySetAsSeries(close,false);
    ArraySetAsSeries(open,false);
-   if(rates_total<PeriodU)
+   if(rates_total<PeriodU+PeriodV)
       return(0);
 
    CalculateSU(rates_total,prev_calculated,open,close);
@@ -78,50 +78,22 @@ int OnCalculate(const int rates_total,
 //+------------------------------------------------------------------+
 void CalculateSU(int rates_total,int prev_calculated,const double &open[],const double &close[])
   {
-  int i,limit;
+   int i,limit;
+   double k1,k2;
 //--- first calculation or number of bars was changed
    if(prev_calculated==0)  
-     {
-      ArrayInitialize(ExtUBuffer,0);
-      //ArrayInitialize(ExtVBuffer,0);
-      ArrayInitialize(ExtXBuffer,0);
-      limit=PeriodU;
-      //--- calculate first visible value
-      double dx=0,fu=0,fs=0,fa=0;
-      for(i=0; i<limit; i++){
-         dx=close[i]-open[i];
-         ExtXBuffer[i]=dx*dx;
-		 fu+=ExtXBuffer[i];
-	  }
-      fu/=PeriodU;
-      ExtUBuffer[limit-1]=sqrt(fu);
-     }
+   {
+      limit=PeriodU+PeriodV;
+   }
    else
       limit=prev_calculated-1;
    for(i=limit; i<rates_total && !IsStopped(); i++){
-     //u=(close[i]-close[i-PeriodU])/PeriodU;
-     //if( i<40)
-     //   Print(ExtUBuffer[i]);
-     
-     ExtXBuffer[i]=(close[i]-open[i])*(close[i]-open[i]);
-     if(i<40){
-        //Print("=====================");
-        //Print(ExtUBuffer[i-1]);
-        //Print(ExtUBuffer[i-1]*ExtUBuffer[i-1]+(ExtXBuffer[i]-ExtXBuffer[i-PeriodU])/PeriodU);
-        //ExtUBuffer[i]=sqrt(ExtUBuffer[i-1]*ExtUBuffer[i-1]+(ExtXBuffer[i]-ExtXBuffer[i-PeriodU])/PeriodU);
-        //Print((ExtXBuffer[i]-ExtXBuffer[i-PeriodU])/PeriodU);
-        //Print(ExtUBuffer[i-1]*ExtUBuffer[i-1]+(ExtXBuffer[i]-ExtXBuffer[i-PeriodU])/PeriodU);
-     }
-     ExtUBuffer[i]=sqrt(ExtUBuffer[i-1]*ExtUBuffer[i-1]+(ExtXBuffer[i]-ExtXBuffer[i-PeriodU])/PeriodU);
-     
-     //return;
-	 //v=(close[i]-close[i-PeriodV])/PeriodV;
-	// ExtVBuffer[i]==(close[i]-close[i-PeriodV])/PeriodV;
-	 
-	 ExtVBuffer[i]=(close[i]-close[i-PeriodV])/PeriodV;
-	 ExtVBuffer[i]=ExtVBuffer[i]/ExtUBuffer[i];
-	 //ExtVBuffer[i]=ExtVBuffer[i]/close[i-PeriodV];
-	 //Print(ExtVBuffer[i]);
+	 k1=(close[i]-close[i-PeriodV])/PeriodV;
+	 k2=close[i-PeriodV];
+	 k2=k2-close[i-PeriodV-PeriodU];
+	 k2=k2/PeriodU;
+	 //k2=(close[i-PeriodV]-close[i-PeriodU-PeriodU])/PeriodU;
+	 ExtVBuffer[i]=(k1-k2)/(1+k1*k2);
     }
   }
 
