@@ -36,9 +36,6 @@ for i in range(PERIOD,PERIOD+10):
     xi.append(df['close'][i-PERIOD:i].tolist())
     yi.append([df.iloc[i]['close']])
     # break
-print(xi)
-print(yi)
-exit()
 # for i in range(0,len(yi)):
     # print(np.argmax(yi[i]))
 STDDEV=1/tf.sqrt(tf.cast(BATCH_SIZE,tf.float32))
@@ -57,7 +54,6 @@ xs=tf.placeholder(tf.float32,shape=[BATCH_SIZE,PERIOD],name="xs")
 ys=tf.placeholder(tf.float32,shape=[BATCH_SIZE],name="ys")
 # yo=tf.placeholder(tf.float32,shape=[None,LABLES])
 # for i in range(0,LABLES):
-xt=tf.reshape(xs,[-1,PERIOD*DIM])
 #for i in range(0,2):
 ## for i in range(0,10):
 #    w=weight_variable([PERIOD*DIM,LABLES],name="w1")
@@ -85,9 +81,16 @@ xt=tf.reshape(xs,[-1,PERIOD*DIM])
 #    # tf.Print(yt,[yt])
 #    # yo+=y
 #    # yo=yo+tf.matmul(drop,w2)+b2
+SIZES=[6,12,1]
+w1=weight_variable([PERIOD,SIZES[0]],name="w1")
+b1=bias_variable([SIZES[0]],name="b1")
 
-w=weight_variable([PERIOD*DIM,LABLES],name="w1")
-b=bias_variable([LABLES],name="b1")
+w2=weight_variable(SIZES[0],SIZES[1]],name="w2")
+b2=bias_variable([SIZES[1]],name="b2")
+
+w2=weight_variable(SIZES[0],SIZES[1]],name="w2")
+b2=bias_variable([SIZES[1]],name="b2")
+
 
 mat=tf.nn.xw_plus_b(xt,w,b)
 # resh=tf.reshape(mat,[-1,LABLES])
