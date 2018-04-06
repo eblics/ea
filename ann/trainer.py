@@ -4,64 +4,58 @@ import tensorflow as tf
 import sys
 import time
 pd.set_option('display.float_format', lambda x: '%.5f' % x)
+np.set_printoptions(suppress=True,precision=6)
 
-PERIOD=21
+PERIOD=6
 DIM=2
 LABLES=120
+BATCH_SIZE=1
 #价格除数，用于归一化，防止出现大于1
 MASK=2
 POINT=100000
-LR=0.01
+LR=0.001
 
 df=pd.read_csv('1.csv',header=None)
 df.columns=['date','time','open','high','low','close','volume']
 df['timestamp']=df['date']+' '+df['time']
 df['timestamp']=df['timestamp'].apply(lambda x:time.mktime(time.strptime(x,'%Y.%m.%d %H:%M'))/time.mktime(time.strptime('2082-02-11 00:00','%Y-%m-%d %H:%M')))
-df['high']=df['high']/MASK
-df['low']=df['low']/MASK
-df['open']=df['open']/MASK
-df['close']=df['close']/MASK
+# df['high']=df['high']-df['high'].mean()
+# df['high']=df['high']/df['high'].std()
+# df['low']=df['low']-df['low'].mean()
+# df['low']=df['low']/df['low'].std()
+# df['open']=df['open']-df['open'].mean()
+# df['open']=df['open']/df['open'].std()
+# df['close']=df['close']-df['close'].mean()
+# df['close']=df['close']/df['close'].std()
 
 xi=[]
 yi=[]
 # print(len(df))
-for i in range(PERIOD,len(df)):
-# for i in range(PERIOD,PERIOD+2000):
-    item=[]
-    item.append(df['open'][i-PERIOD:i].tolist())
-    item.append(df['close'][i-PERIOD:i].tolist())
-    # item.append(df['timestamp'][i-PERIOD:i].tolist())
-    gap=df.iloc[i]['close']-df.iloc[i]['open']
-    gap=gap*POINT
-    if gap>LABLES/2:gap=LABLES/2-1
-    if gap<-LABLES/2:gap=-LABLES/2
-    il=int(gap+LABLES/2)
-    lable=np.zeros([LABLES]).tolist()
-    lable[il]=1
-    item=np.array(item)
-    item=item.transpose(1,0)
-    xi.append(item)
-    yi.append(lable)
+# for i in range(PERIOD,len(df)):
+for i in range(PERIOD,PERIOD+10):
+    xi.append(df['close'][i-PERIOD:i].tolist())
+    yi.append([df.iloc[i]['close']])
     # break
-# print(xi)
+print(xi)
+print(yi)
+exit()
 # for i in range(0,len(yi)):
     # print(np.argmax(yi[i]))
-
+STDDEV=1/tf.sqrt(tf.cast(BATCH_SIZE,tf.float32))
 def weight_variable(shape,name):
     # 正态分布，标准差为0.1，默认最大为1，最小为-1，均值为0
-    initial = tf.truncated_normal(shape, stddev=0.1)
+    initial = tf.truncated_normal(shape, STDDEV)
     return tf.Variable(initial,name=name)
 def bias_variable(shape,name):
     # 创建一个结构为shape矩阵也可以说是数组shape声明其行列，初始化所有值为0.1
     # initial = tf.constant(0.1, shape=shape)
-    initial = tf.truncated_normal(shape, stddev=0.1)
+    initial = tf.truncated_normal(shape,1)
     return tf.Variable(initial,name=name)
 
 sess=tf.Session()
-xs=tf.placeholder(tf.float32,shape=[None,PERIOD,DIM],name="xs")
-ys=tf.placeholder(tf.float32,shape=[None,LABLES],name="ys")
+xs=tf.placeholder(tf.float32,shape=[BATCH_SIZE,PERIOD],name="xs")
+ys=tf.placeholder(tf.float32,shape=[BATCH_SIZE],name="ys")
 # yo=tf.placeholder(tf.float32,shape=[None,LABLES])
-yt=None
 # for i in range(0,LABLES):
 xt=tf.reshape(xs,[-1,PERIOD*DIM])
 #for i in range(0,2):
@@ -131,6 +125,9 @@ test_writer = tf.summary.FileWriter('./test')
 sess.run(tf.global_variables_initializer())
 for i in range(0,1000):
     _,ce,cp,ac=sess.run([train_op,cross_entropy,correct_prediction,accuracy],feed_dict={xs:xi,ys:yi})
+    _ys,_yt=sess.run([ys,softmax],feed_dict={xs:xi,ys:yi})
+    # print(_ys)
+    # print(_yt)
     # _,ce,cp,ac,sm,_a,_b,_c,_yt=sess.run([train_op,cross_entropy,correct_prediction,accuracy,softmax,a,b,c,yt],feed_dict={xs:xi,ys:yi})
     summary=sess.run([merged],feed_dict={xs:xi,ys:yi})
     # run_metadata = tf.RunMetadata()
@@ -141,6 +138,7 @@ for i in range(0,1000):
     # print('sm:%d a:%f b:%f c:%f'%(len(sm[sm<=0]),_a,_b,_c))
     # print(_yt.shape)
     # print(cp)
+    # break
     print("ce:%.6f ac:%.6f"%(ce,ac))
 
     # yo,so,ce=sess.run([ys,softmax,cross_entropy],feed_dict={xs:xi,ys:yi})
