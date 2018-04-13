@@ -15,75 +15,47 @@ np.set_printoptions(threshold=np.inf)
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 # tf.reset_default_graph()
-NTRADERS=200
+NTRADERS=100
 NHIDDEN=30
 INITIAL_FOUNDS=1000.0
-PERIOD=55
+PERIOD=200
 LOTS=1
 GAP=100.0
-GAP_FLOAT=0.001000
+GAP_FLOAT=0.0005000
 FACTOR=100000
+EPOCH=10
 
-blances=np.full((NTRADERS,),INITIAL_FOUNDS)
-order_ops=np.full((NTRADERS,),-1)
-order_open_prices=np.full((NTRADERS,),0.0)
-order_takeprofits=np.full((NTRADERS,),0.0)
-order_stoploss=np.full((NTRADERS,),0.0)
-order_profit=np.full((NTRADERS,),0.0)
 
-blances_var=tf.Variable(blances)
-w1=np.random.random((NTRADERS,NHIDDEN,PERIOD))
-b1=np.random.random((NTRADERS,NHIDDEN,PERIOD))
-w2=np.random.random((NTRADERS,NHIDDEN,NHIDDEN))
-b2=np.random.random((NTRADERS,NHIDDEN,NHIDDEN))
-w3=np.random.random((NTRADERS,3,NHIDDEN))
-# w1=w1/np.sqrt(NTRADERS)
-# w2=w2/np.sqrt(NTRADERS)
-# b1=b1/np.sqrt(NTRADERS)
-w1=w1*(w1<0.5)/np.sqrt(NTRADERS*PERIOD)
-b1=b1*(b1<0.5)/np.sqrt(NTRADERS*PERIOD)
-w2=w2*(w2<0.5)/np.sqrt(NTRADERS*PERIOD)
-b2=b2*(b2<0.5)/np.sqrt(NTRADERS*PERIOD)
-w3=w3*(w3<0.5)/np.sqrt(NTRADERS*PERIOD)
-# print(w1)
-# print(w2)
-w1_var=tf.Variable(w1)
-b1_var=tf.Variable(b1)
-w2_var=tf.Variable(w2)
-b2_var=tf.Variable(b2)
-w3_var=tf.Variable(w3)
-#order_var=tf.Variable(np.random.random((3,NTRADERS)))
-open=tf.placeholder(shape=[None],dtype=tf.float64)
-close=tf.placeholder(shape=[None],dtype=tf.float64)
-order=tf.Variable(np.random.randint(-1,0,(NTRADERS)))
-oop=tf.Variable(np.zeros((NTRADERS),dtype=np.float64))
 
-def succ(x,oop,order,open,close,blances_var,w1_var,w2_var,b1_var):
+def succ(x,opv,ov,bv):
     price=close[x]
-    bmask=tf.cast(tf.equal(order,0),tf.float64)
-    bop=oop*bmask
-    profit_orders=tf.cast(tf.less_equal(bop,price-GAP_FLOAT),tf.int64)
-    profit_orders=profit_orders*tf.cast(tf.greater(bop,0),tf.int64)
-    blances_var=blances_var+tf.cast(profit_orders,tf.float64)*LOTS*GAP
-    order=order-profit_orders
-    oop=oop*tf.cast((1-profit_orders),tf.float64)
-    loss_orders=tf.cast(tf.greater_equal(bop,price+GAP_FLOAT),tf.int64)
-    blances_var=blances_var-tf.cast(loss_orders,tf.float64)*LOTS*GAP
-    order=order-loss_orders
-    oop=oop*tf.cast((1-loss_orders),tf.float64)
-    smask=tf.cast(tf.equal(order,1),tf.float64)
-    sop=oop*smask
-    profit_orders=tf.cast(tf.greater_equal(sop,price+GAP_FLOAT),tf.int64)
-    blances_var=blances_var+tf.cast(profit_orders,tf.float64)*LOTS*GAP
-    order=order-2*profit_orders
-    oop=oop*tf.cast((1-profit_orders),tf.float64)
-    loss_orders=tf.cast(tf.less_equal(sop,price-GAP_FLOAT),tf.int64)
-    loss_orders=loss_orders*tf.cast(tf.greater(sop,0),tf.int64)
-    order=order-2*loss_orders
-    oop=oop*tf.cast((1-loss_orders),tf.float64)
-    blances_var=blances_var-tf.cast(loss_orders,tf.float64)*LOTS*GAP
+    bmask=tf.cast(tf.equal(ov,0),tf.float32)
+    bop=opv*bmask
+    profit_ovs=tf.cast(tf.less_equal(bop,price-GAP_FLOAT),tf.int32)
+    profit_ovs=profit_ovs*tf.cast(tf.greater(bop,0),tf.int32)
+    bv=bv+tf.cast(profit_ovs,tf.float32)*LOTS*GAP
+    ov=ov-profit_ovs
+    opv=opv*tf.cast((1-profit_ovs),tf.float32)
+    loss_ovs=tf.cast(tf.greater_equal(bop,price+GAP_FLOAT),tf.int32)
+    bv=bv-tf.cast(loss_ovs,tf.float32)*LOTS*GAP
+    ov=ov-loss_ovs
+    opv=opv*tf.cast((1-loss_ovs),tf.float32)
+    smask=tf.cast(tf.equal(ov,1),tf.float32)
+    sop=opv*smask
+    profit_ovs=tf.cast(tf.greater_equal(sop,price+GAP_FLOAT),tf.int32)
+    bv=bv+tf.cast(profit_ovs,tf.float32)*LOTS*GAP
+    ov=ov-2*profit_ovs
+    opv=opv*tf.cast((1-profit_ovs),tf.float32)
+    loss_ovs=tf.cast(tf.less_equal(sop,price-GAP_FLOAT),tf.int32)
+    loss_ovs=loss_ovs*tf.cast(tf.greater(sop,0),tf.int32)
+    ov=ov-2*loss_ovs
+    opv=opv*tf.cast((1-loss_ovs),tf.float32)
+    bv=bv-tf.cast(loss_ovs,tf.float32)*LOTS*GAP
+    # bv=tf.Print(bv,[bv])
 
     s=close[x-PERIOD+1:x+1]-open[x-PERIOD+1:x+1]
+    print(s)
+    print(FACTOR)
     y=w1_var*s*FACTOR+b1_var
     y=tf.reduce_sum(y,axis=2,keepdims=True)
     y=tf.nn.elu(y)
@@ -94,45 +66,96 @@ def succ(x,oop,order,open,close,blances_var,w1_var,w2_var,b1_var):
     y=tf.reduce_sum(y,axis=2)
     y=tf.nn.sigmoid(y)
     y=tf.nn.softmax(y)
-    order=order+tf.cast(tf.equal(order,-1),tf.int64)*tf.argmax(y,1)
-    cp=tf.cast(tf.equal(oop,0),tf.float64)*price
-    oop=oop+cp
-    oop=tf.cast(tf.greater(blances_var,0),tf.float64)*oop
-    return x,oop,order,open,close,blances_var,w1_var,w2_var,b1_var
-def fail(x,oop,order,open,close,blances_var,w1_var,w2_var,b1_var):
-    return x,oop,order,open,close,blances_var,w1_var,w2_var,b1_var
+    ov=ov+tf.cast(tf.equal(ov,-1),tf.int32)*tf.argmax(y,1,output_type=tf.int32)
+    cp=tf.cast(tf.equal(opv,0),tf.float32)*price
+    opv=opv+cp
+    opv=tf.cast(tf.greater(bv,0),tf.float32)*opv
+    return x,opv,ov,bv
 
-i=tf.constant(0)
-def cond(x,oop,order,open,close,blances_var,w1_var,w2_var,b1_var,mean):
-    return tf.logical_and(x<tf.size(close),tf.reduce_any(tf.greater(blances_var,0)))
+def fail(x,opv,ov,bv):
+    return x,opv,ov,bv
 
-def body(x,oop,order,open,close,blances_var,w1_var,w2_var,b1_var,mean):
-    x,oop,order,open,close,blances_var,w1_var,w2_var,b1_var=tf.cond(x>=PERIOD-1,
-    lambda:succ(x,oop,order,open,close,blances_var,w1_var,w2_var,b1_var),
-    lambda:fail(x,oop,order,open,close,blances_var,w1_var,w2_var,b1_var))
-    x+=1
-    # mean=tf.reduce_mean(blances_var)
-    # mean=tf.Print(mean,[mean])
-    x=tf.Print(x,[x])
-    return x,oop,order,open,close,blances_var,w1_var,w2_var,b1_var,mean
+def cond(x,opv,ov,bv):
+    return tf.logical_and(x<tf.size(close),tf.reduce_any(tf.greater(bv,0)))
 
-mean=tf.reduce_mean(blances_var)
-loop=tf.while_loop(cond,body,[i,oop,order,open,close,blances_var,w1_var,w2_var,b1_var,mean])
+def body(x,opv,ov,bv):
+    x,opv,ov,bv=tf.cond(x>=PERIOD-1,
+        lambda:succ(x,opv,ov,bv),
+        lambda:fail(x,opv,ov,bv))
+    x+=1;#x=tf.Print(x,[x])
+    return x,opv,ov,bv
+# mean=tf.reduce_mean(blances_var)
+blances=np.full((NTRADERS,),INITIAL_FOUNDS,dtype=np.float32)
+w1=np.random.random((NTRADERS,NHIDDEN,PERIOD))
+b1=np.random.random((NTRADERS,NHIDDEN,PERIOD))
+w2=np.random.random((NTRADERS,NHIDDEN,NHIDDEN))
+b2=np.random.random((NTRADERS,NHIDDEN,NHIDDEN))
+w3=np.random.random((NTRADERS,3,NHIDDEN))
+w1=w1*(w1<0.5)/np.sqrt(NTRADERS*PERIOD)
+b1=b1*(b1<0.5)/np.sqrt(NTRADERS*PERIOD)
+w2=w2*(w2<0.5)/np.sqrt(NTRADERS*PERIOD)
+b2=b2*(b2<0.5)/np.sqrt(NTRADERS*PERIOD)
+w3=w3*(w3<0.5)/np.sqrt(NTRADERS*PERIOD)
+norder=np.random.randint(-1,0,(NTRADERS))
+noop=np.zeros((NTRADERS),dtype=np.float32)
 
-# x=np.array([0.9,0.8,0.7,0.9,0.6,0.4,1.2],dtype=np.float64)
-# x=np.random.random((1000))
+blances_var=tf.placeholder(shape=blances.shape,dtype=np.float32,name='blances')
+w1_var=tf.placeholder(shape=w1.shape,dtype=tf.float32,name='w1')
+b1_var=tf.placeholder(shape=b1.shape,dtype=tf.float32,name='b1')
+w2_var=tf.placeholder(shape=w2.shape,dtype=tf.float32,name='w2')
+b2_var=tf.placeholder(shape=b2.shape,dtype=tf.float32,name='b2')
+w3_var=tf.placeholder(shape=w3.shape,dtype=tf.float32,name='w3')
+
+open=tf.placeholder(shape=[None],dtype=tf.float32,name='open')
+close=tf.placeholder(shape=[None],dtype=tf.float32,name='close')
+order=tf.placeholder(shape=norder.shape,dtype=tf.int32,name='order')
+oop=tf.placeholder(shape=noop.shape,dtype=np.float32,name='oop')
+loop_i=tf.constant(0)
+loop=tf.while_loop(cond,body,[loop_i,oop,order,blances_var])
+
 df=pd.read_csv('test.csv.bak',header=None)
-# df=pd.read_csv('test.csv',header=None)
 df.columns=['date','time','open','high','low','close','volume']
-xo=np.array(df['open'])
-xc=np.array(df['close'])
+xo=np.array(df['open'],dtype=np.float32)
+xc=np.array(df['close'],dtype=np.float32)
 sess=tf.Session()
-sess.run(tf.global_variables_initializer())
-loop=sess.run(loop,feed_dict={open:xo,close:xc})
-traders=loop[5]
-print(traders)
-# print(x)
-# print('2')
-# print(loop[2])
-# print(loop[1])
-# print(loop[4])
+for e in range(0,EPOCH):
+    print('epoch:%d'%(e))
+    sess.run(tf.global_variables_initializer())
+    x,opv,ov,bv=sess.run(loop,feed_dict={open:xo,close:xc,w1_var:w1,b1_var:b1,w2_var:w2,b2_var:b2,w3_var:w3,oop:noop,order:norder,blances_var:blances})
+    print(bv)
+    loses_arg=np.argwhere(bv<=INITIAL_FOUNDS)
+    winners_arg=np.argwhere(bv>INITIAL_FOUNDS)
+    # print(loses_arg)
+    if len(winners_arg)>2:
+        # print('=================have winners=====================')
+        for i in loses_arg:
+            j=winners_arg[np.random.randint(0,len(winners_arg))];
+            k=winners_arg[np.random.randint(0,len(winners_arg))];
+            # print('i:%d j:%d k:%d'%(i,j,k))
+            w1[i]=(w1[j]+w1[k])/2
+            b1[i]=(b1[j]+b1[k])/2
+            w2[i]=(w2[j]+w2[k])/2
+            b2[i]=(b2[j]+b2[k])/2
+            w3[i]=(w3[j]+w3[k])/2
+            w1[i]=w1[i]*(w1[i]>0.5)
+            b1[i]=b1[i]*(b1[i]>0.5)
+            w2[i]=w2[i]*(w2[i]>0.5)
+            b2[i]=b2[i]*(b2[i]>0.5)
+            w3[i]=w3[i]*(w3[i]>0.5)
+    else:
+        # print('============no winners===============')
+        w1=np.random.random((NTRADERS,NHIDDEN,PERIOD))
+        b1=np.random.random((NTRADERS,NHIDDEN,PERIOD))
+        w2=np.random.random((NTRADERS,NHIDDEN,NHIDDEN))
+        b2=np.random.random((NTRADERS,NHIDDEN,NHIDDEN))
+        w3=np.random.random((NTRADERS,3,NHIDDEN))
+        w1=w1*(w1<0.5)/np.sqrt(NTRADERS*PERIOD)
+        b1=b1*(b1<0.5)/np.sqrt(NTRADERS*PERIOD)
+        w2=w2*(w2<0.5)/np.sqrt(NTRADERS*PERIOD)
+        b2=b2*(b2<0.5)/np.sqrt(NTRADERS*PERIOD)
+        w3=w3*(w3<0.5)/np.sqrt(NTRADERS*PERIOD)
+
+    blances=np.full((NTRADERS,),INITIAL_FOUNDS,dtype=np.float32)
+    norder=np.random.randint(-1,0,(NTRADERS))
+    noop=np.zeros((NTRADERS),dtype=np.float32)
+    # x,opv,ov,bv=sess.run(loop,feed_dict={open:xo,close:xc,w1_var:w1,b1_var:b1,w2_var:w2,b2_var:b2,w3_var:w3,oop:noop,order:norder,blances_var:blances})
