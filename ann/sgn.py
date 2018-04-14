@@ -204,7 +204,7 @@ def main_body(i,prob):
     k=tf.constant(0)
     k,m,prob=tf.while_loop(lambda k,m,p:k<NTRADERS,ajust_body,[k,m,prob])
     i+=1
-    # i=tf.Print(i,[i],message='main:')
+    i=tf.Print(i,[i],message='main:')
     prob=tf.cond(prob<0.99,lambda:prob+0.01,lambda:prob)
     return i,prob
 
