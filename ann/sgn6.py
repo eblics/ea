@@ -17,26 +17,28 @@ np.set_printoptions(suppress=True,precision=6)
 np.set_printoptions(threshold=np.inf)
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
-NTRADERS=10
-NHIDDEN=30
+NTRADERS=100
+NHIDDEN=1
 INITIAL_FOUNDS=1000.0
 PERIOD=55
 LOTS=0.5
-GAP=50.0
+GAP=40.0
 GAP_FLOAT=0.00001*GAP
 # FACTOR=1000000
-FACTOR=np.exp(8)
+FACTOR=np.exp(9)
 EPOCH=20
 
 
 # w1=np.random.randn(NTRADERS,NHIDDEN,PERIOD)
 # w2=np.random.randn(NTRADERS,2,NHIDDEN)
-stddev=1.0/tf.cast(tf.sqrt(PERIOD*1.0),tf.float32)
+stddev=1.0/tf.sqrt(PERIOD*NHIDDEN*1.0)
 w1=tf.Variable(tf.random_normal(shape=[NTRADERS,NHIDDEN,PERIOD],mean=0.0,stddev=stddev))
+b1=tf.Variable(tf.random_normal(shape=[NTRADERS,1,NHIDDEN],mean=0.0,stddev=stddev))
 w2=tf.Variable(tf.random_normal(shape=[NTRADERS,2,NHIDDEN],mean=0.0,stddev=stddev))
 with tf.variable_scope('temp',reuse=tf.AUTO_REUSE):
     init=tf.constant_initializer()
     w1_t=tf.get_variable(name='w1',shape=w1.shape,initializer=init)
+    b1_t=tf.get_variable(name='b1',shape=b1.shape,initializer=init)
     w2_t=tf.get_variable(name='w2',shape=w2.shape,initializer=init)
 # w2=np.random.randn(NTRADERS,2,NHIDDEN)
 open_ph=tf.placeholder(shape=[None],dtype=tf.float32,name='open')
@@ -48,6 +50,8 @@ def decide(s):
     y=w1*s*FACTOR
     y=tf.reduce_sum(y,axis=2)
     y=tf.reshape(y,shape=[NTRADERS,1,NHIDDEN])
+    y=y+b1
+    y=tf.nn.tanh(y)
     y=w2*y
     y=tf.reduce_sum(y,axis=2)
     y=tf.nn.softmax(y)
@@ -95,6 +99,7 @@ def move(i,blances,orders,oop):
     oop_now=decision*tf.cast(tf.equal(orders,0),tf.int32)
     oop=oop+tf.cast(oop_now,tf.float32)*iopen
     orders+=(decision)*tf.cast(tf.equal(orders,0),tf.int32)
+    orders*=tf.cast(tf.greater(blances,0),tf.int32)
     i+=1
     return i,blances,orders,oop
 
@@ -107,30 +112,35 @@ def try_in_market():
     return blances,orders,oop
 
 def cross(bit,biv):
-    global w1,w2
+    global w1,b1,w2
     w1_n=w1[bit]*0.5+w1[biv]*0.5
+    b1_n=b1[bit]*0.5+b1[biv]*0.5
     w2_n=w2[bit]*0.5+w2[biv]*0.5
     w1_n=tf.assign(w1[bit],w1_n)
+    b1_n=tf.assign(b1[bit],b1_n)
     w2_n=tf.assign(w2[bit],w2_n)
     return w1_n,w2_n
 
 def reproduce(be):
-    global w1,w2
+    global w1,b1,w2
     with tf.variable_scope('temp',reuse=tf.AUTO_REUSE):
         w1_t=tf.get_variable(name='w1',shape=w1.shape)
+        b1_t=tf.get_variable(name='b1',shape=b1.shape)
         w2_t=tf.get_variable(name='w2',shape=w2.shape)
 
     i=tf.constant(0)
-    def body(x,w1_t,w2_t):
-        w1_t=tf.assign(w1[x],w1[x]*0.4+w1[be]*0.5+tf.random_normal(shape=w1[be].shape)*0.1)
-        w2_t=tf.assign(w2[x],w2[x]*0.4+w2[be]*0.5+tf.random_normal(shape=w2[be].shape)*0.1)
-        return x+1,w1_t,w2_t
-    i,w1_t,w2_t=tf.while_loop(lambda x,w1,w2:x<NTRADERS,body,[i,w1_t,w2_t])
-    return w1_t,w2_t
+    def body(x,w1_t,b1_t,w2_t):
+        w1_t=tf.assign(w1[x],w1[x]*0.4+w1[be]*0.5+tf.random_normal(shape=w1[be].shape,stddev=stddev)*0.1)
+        b1_t=tf.assign(b1[x],b1[x]*0.4+b1[be]*0.5+tf.random_normal(shape=b1[be].shape,stddev=stddev)*0.1)
+        w2_t=tf.assign(w2[x],w2[x]*0.4+w2[be]*0.5+tf.random_normal(shape=w2[be].shape,stddev=stddev)*0.1)
+        return x+1,w1_t,b1_t,w2_t
+    i,w1_t,b1_t,w2_t=tf.while_loop(lambda x,w1,b1,w2:x<NTRADERS,body,[i,w1_t,b1_t,w2_t])
+    return w1_t,b1_t,w2_t
 
-def init(w1_value,w2_value):
-    global w1,w2
+def init(w1_value,b1_value,w2_value):
+    global w1,b1,w2
     y=tf.assign(w1,w1_value)
+    y=tf.assign(b1,b1_value)
     y=tf.assign(w2,w2_value)
     return y
 
@@ -139,8 +149,8 @@ def train(fname,vfname):
     sess.run(tf.global_variables_initializer())
     if os.path.exists(DUMP_PATH):
         with open(DUMP_PATH,'rb') as f:
-            m,w1_value,w2_value=pickle.load(f)
-            sess.run(init(w1_value,w2_value))
+            m,w1_value,b1_value,w2_value=pickle.load(f)
+            sess.run(init(w1_value,b1_value,w2_value))
 
     columns=['date','time','open','high','low','close','volume']
     train_data=pd.read_csv(fname,header=None)
@@ -159,19 +169,21 @@ def train(fname,vfname):
         tiv=bv[bit]
         vit=bt[biv]
         best=bit
-        if tiv>INITIAL_FOUNDS and vit>INITIAL_FOUNDS:
-            sess.run(cross(bit,biv))
-            best=bit
-        if tiv>INITIAL_FOUNDS and vit<INITIAL_FOUNDS:
-            best=bit
-        if tiv<INITIAL_FOUNDS and vit>INITIAL_FOUNDS:
-            best=biv
+        sess.run(cross(bit,biv))
         sess.run(reproduce(best))
+        # if tiv>INITIAL_FOUNDS and vit>INITIAL_FOUNDS:
+            # best=bit
+        # if tiv>INITIAL_FOUNDS and vit<INITIAL_FOUNDS:
+            # best=bit
+        # if tiv<INITIAL_FOUNDS and vit>INITIAL_FOUNDS:
+            # best=biv
         with open(DUMP_PATH,'wb') as f:
-            w1_value,w2_value=sess.run([w1,w2])
-            pickle.dump((best,w1_value,w2_value),f)
+            w1_value,b1_value,w2_value=sess.run([w1,b1,w2])
+            pickle.dump((best,w1_value,b1_value,w2_value),f)
         endtime=time.time()
-        print('epoch:',e,' time:',endtime-starttime,'bit:',bit,' mit:',mit,'biv:',biv,'miv:',miv)
+        # print('epoch:',e,' time:',endtime-starttime,'bit:',bit,' mit:',mit,'tiv:',tiv,'vit:',vit,'biv:',biv,'miv:',miv)
+        print('epoch:%2d time:%3d bit:%3d biv:%3d mit:%5f miv:%5f tiv:%5f vit:%5f'%
+              (e,endtime-starttime,bit,biv,mit,miv,tiv,vit))
 
 HOST='0.0.0.0'
 PORT=8899
