@@ -331,13 +331,17 @@ def listen():
             data=tcpClientSock.recv(BUFSIZE)
             strs=data.decode().strip('\x00').split(',')
             # d=[strs[0],strs[1],float(strs[3]),float(strs[4]),float(str[5]),float(str[6])]
-            date=strs[0];minute=strs[1];topen=float(strs[2]);thigh=float(strs[3]);tlow=float(strs[4]);tclose=float(strs[5])
+            cmd=strs[0];date=strs[1];minute=strs[2];topen=float(strs[3]);thigh=float(strs[4]);tlow=float(strs[5]);tclose=float(strs[6])
             d=[[date,minute,topen,thigh,tlow,tclose,0]]
             item=pd.DataFrame(d,columns=columns)
             df=pd.concat([df,item],ignore_index=True)
             if len(df)<PERIOD:
-                tcpClientSock.send('0'.encode())
+                tcpClientSock.send(str(0).encode())
                 continue
+            if cmd=='INIT':
+                tcpClientSock.send(str(0).encode())
+                continue
+                
             index=len(df)
             xo=np.array(df['open'][index-PERIOD:index],dtype=np.float32)
             xc=np.array(df['close'][index-PERIOD:index],dtype=np.float32)
