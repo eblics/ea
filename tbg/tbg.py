@@ -360,6 +360,7 @@ def listen():
                 nmax=b[am]
                 print('oopm:%5f bm:%5d om:%1d am:%2d max:%5d'%(op[m],b[m],o[m],am,nmax))
                 tcpClientSock.send(str(o[m]).encode())
+            else:tcpClientSock.send(str(0).encode())
             if bar>30:
                 df.to_csv(time.strftime('%Y_%m_%d',time.gmtime(time.time()))+'.csv',header=None,index=None);bar=0;
             bar+=1
