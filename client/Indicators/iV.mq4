@@ -71,7 +71,7 @@ int OnCalculate(const int rates_total,
    ArraySetAsSeries(open,false);
    if(rates_total<PeriodU+PeriodV)
       return(0);
-
+   PrintFormat("Balance:%f Enquity:%f Margin:%f Credit:%f",AccountBalance(),AccountEquity(),AccountMargin(),AccountCredit());
    CalculateSU(rates_total,prev_calculated,open,close);
    return(rates_total);
   }
