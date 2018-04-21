@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
-df=pd.read_csv('prop_cnt')
+df=pd.read_csv('AUDUSD_MKV.csv_cnt')
 da=df.values
 
 da=np.delete(da,0,axis=1)
