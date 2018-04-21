@@ -345,7 +345,10 @@ def listen():
             xl=np.array(df['low'][index-PERIOD:index],dtype=np.float32)
             b,o,op=sess.run([op_b,op_o,op_op],feed_dict={open_ph:xo,close_ph:xc,high_ph:xh,low_ph:xl,blances_ph:b,orders_ph:o,oop_ph:op})
 
-            if open_price==0:open_price=df.iloc[index-1]['close'];open_time=df.iloc[index-1]['date']+' '+df.iloc[index-1]['time']
+            if open_price==0:
+                open_price=df.iloc[index-1]['close'];
+                open_time=df.iloc[index-1]['date']+' '+df.iloc[index-1]['time']
+                tcpClientSock.send(str(o[m]).encode())
             if abs(b[m]-bt)>=LOTS*GAP:
                 close_price=df.iloc[index-1]['close']
                 d=o[m]
@@ -356,7 +359,7 @@ def listen():
                 am=b.argmax()
                 nmax=b[am]
                 print('oopm:%5f bm:%5d om:%1d am:%2d max:%5d'%(op[m],b[m],o[m],am,nmax))
-            tcpClientSock.send(str(o[m]).encode())
+                tcpClientSock.send(str(o[m]).encode())
             if bar>30:
                 df.to_csv(time.strftime('%Y_%m_%d',time.gmtime(time.time()))+'.csv',header=None,index=None);bar=0;
             bar+=1
