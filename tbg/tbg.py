@@ -344,7 +344,9 @@ def listen():
             index=len(df)
             xo=np.array(df['open'][index-PERIOD:index],dtype=np.float32)
             xc=np.array(df['close'][index-PERIOD:index],dtype=np.float32)
-            b,o,op=sess.run([op_b,op_o,op_op],feed_dict={open_ph:xo,close_ph:xc,blances_ph:b,orders_ph:o,oop_ph:op})
+            xh=np.array(df['high'][index-PERIOD:index],dtype=np.float32)
+            xl=np.array(df['low'][index-PERIOD:index],dtype=np.float32)
+            b,o,op=sess.run([op_b,op_o,op_op],feed_dict={open_ph:xo,close_ph:xc,high_ph:xh,low_ph:xl,blances_ph:b,orders_ph:o,oop_ph:op})
 
             if open_price==0:open_price=df.iloc[index-1]['close'];open_time=df.iloc[index-1]['date']+' '+df.iloc[index-1]['time']
             if abs(b[m]-bt)>=LOTS*GAP:
