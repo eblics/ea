@@ -115,9 +115,6 @@ def move(i,blances,orders,oop):
 
     blances,orders,oop=checkorders(blances,orders,oop,iopen,ihigh,ilow,iclose)
     xs=close_ph[i-PERIOD:i]-open_ph[i-PERIOD]
-
-    blances,orders,oop=checkorders(blances,orders,oop,iopen,None,None,iclose)
-    xs=close_ph[i-PERIOD:i]-open_ph[i-PERIOD]
     decision=decide(xs)
     oop_now=tf.not_equal(decision*tf.cast(tf.equal(orders,0),tf.int32),0)
     # orders=tf.Print(orders,[orders],message='orders1:')
