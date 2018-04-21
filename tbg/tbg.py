@@ -113,7 +113,7 @@ def move(i,blances,orders,oop):
     ihigh=high_ph[i-1]
     ilow=low_ph[i-1]
 
-    blances,orders,oop=checkorders(blances,orders,oop,iopen,None,None,iclose)
+    blances,orders,oop=checkorders(blances,orders,oop,iopen,ihigh,ilow,iclose)
     xs=close_ph[i-PERIOD:i]-open_ph[i-PERIOD]
 
     blances,orders,oop=checkorders(blances,orders,oop,iopen,None,None,iclose)
