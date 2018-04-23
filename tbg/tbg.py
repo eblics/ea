@@ -70,41 +70,51 @@ def decide(s):
 
 DUMP_PATH='winner.sgn'
 def checkorders(blances,orders,oop,iopen,ihigh,ilow,iclose):
+    price=iclose
     buy_orders=tf.cast(tf.equal(orders,1),tf.float32)
     buy_prices=oop*tf.cast(buy_orders,tf.float32)
-    profit_buy_orders=tf.cast(tf.less_equal(buy_prices,ihigh-GAP_FLOAT),tf.int32)
+    profit_buy_orders=tf.cast(tf.less_equal(buy_prices,price-GAP_FLOAT),tf.int32)
     profit_buy_orders=profit_buy_orders*tf.cast(tf.not_equal(buy_prices,0),tf.int32)
-    lose_buy_orders=tf.cast(tf.greater_equal(buy_prices,ilow+GAP_FLOAT),tf.int32)
+    lose_buy_orders=tf.cast(tf.greater_equal(buy_prices,price+GAP_FLOAT),tf.int32)
     blances+=tf.cast(profit_buy_orders,tf.float32)*GAP*LOTS
     blances-=tf.cast(lose_buy_orders,tf.float32)*GAP*LOTS
 
     sell_orders=tf.cast(tf.equal(orders,-1),tf.int32)
     sell_prices=oop*tf.cast(sell_orders,tf.float32)
-    profit_sell_orders=tf.cast(tf.greater_equal(sell_prices,ilow+GAP_FLOAT),tf.int32)
-    lose_sell_orders=tf.cast(tf.less_equal(sell_prices,ihigh-GAP_FLOAT),tf.int32)
+    profit_sell_orders=tf.cast(tf.greater_equal(sell_prices,price+GAP_FLOAT),tf.int32)
+    lose_sell_orders=tf.cast(tf.less_equal(sell_prices,price-GAP_FLOAT),tf.int32)
     lose_sell_orders=lose_sell_orders*tf.cast(tf.not_equal(sell_prices,0),tf.int32)
     blances+=tf.cast(profit_sell_orders,tf.float32)*LOTS*GAP
     blances-=tf.cast(lose_sell_orders,tf.float32)*LOTS*GAP
 
-    # orders=tf.Print(orders,[orders],message='corders1:')
-    # profit_buy_orders=tf.Print(profit_buy_orders,[profit_buy_orders],message='cprofit_buy_orders1:')
-    # lose_buy_orders=tf.Print(lose_buy_orders,[lose_buy_orders],message='close_buy_orders1:')
-    # profit_sell_orders=tf.Print(profit_sell_orders,[profit_sell_orders],message='cprofit_sell_orders1:')
-    # lose_sell_orders=tf.Print(lose_sell_orders,[lose_sell_orders],message='close_sell_orders1:')
+    # orders=tf.Print(orders,[orders],message='corders1:',summarize=100)
+    # profit_buy_orders=tf.Print(profit_buy_orders,[profit_buy_orders],message='cprofit_buy_orders1:',summarize=100)
+    # lose_buy_orders=tf.Print(lose_buy_orders,[lose_buy_orders],message='close_buy_orders1:',summarize=100)
+    # profit_sell_orders=tf.Print(profit_sell_orders,[profit_sell_orders],message='cprofit_sell_orders1:',summarize=100)
+    # lose_sell_orders=tf.Print(lose_sell_orders,[lose_sell_orders],message='close_sell_orders1:',summarize=100)
 
     orders=orders-profit_buy_orders
-    # orders=tf.Print(orders,[orders],message='corders2')
+    # orders=tf.Print(orders,[orders],message='corders2',summarize=100)
     orders=orders-lose_buy_orders
-    # orders=tf.Print(orders,[orders],message='corders3')
+    # orders=tf.Print(orders,[orders],message='corders3',summarize=100)
     orders=orders+profit_sell_orders
-    # orders=tf.Print(orders,[orders],message='corders4')
+    # orders=tf.Print(orders,[orders],message='corders4',summarize=100)
     orders=orders+lose_sell_orders
-    # orders=tf.Print(orders,[orders],message='corders5')
-
+    # orders=tf.Print(orders,[orders],message='corders5',summarize=100)
+    #oop=tf.Print(oop,[oop],message='oop1',summarize=100)
     oop=oop*tf.cast(tf.equal(profit_buy_orders,0),tf.float32)
+    #oop=tf.Print(oop,[oop],message='oop2',summarize=100)
     oop=oop*tf.cast(tf.equal(lose_buy_orders,0),tf.float32)
+    #oop=tf.Print(oop,[oop],message='oop3',summarize=100)
+    #profit_sell_orders=tf.Print(profit_sell_orders,[profit_sell_orders],message='profit_sell_orders1:',summarize=100)
+    #profit_sell_orders=tf.cast(tf.equal(profit_sell_orders,0),tf.float32)
+    #profit_sell_orders=tf.Print(profit_sell_orders,[profit_sell_orders],message='profit_sell_orders2:',summarize=100)
+    #oop=tf.Print(oop,[oop],message='oop4 before',summarize=100)
     oop=oop*tf.cast(tf.equal(profit_sell_orders,0),tf.float32)
+    #oop=oop*profit_sell_orders
+    #oop=tf.Print(oop,[oop],message='oop4 after',summarize=100)
     oop=oop*tf.cast(tf.equal(lose_sell_orders,0),tf.float32)
+    #oop=tf.Print(oop,[oop],message='oop5',summarize=100)
     return blances,orders,oop
 
 def move(i,blances,orders,oop):
@@ -112,16 +122,17 @@ def move(i,blances,orders,oop):
     iclose=close_ph[i-1]
     ihigh=high_ph[i-1]
     ilow=low_ph[i-1]
-
+    #oop=tf.Print(oop,[oop],message='oop before:',summarize=100)
     blances,orders,oop=checkorders(blances,orders,oop,iopen,ihigh,ilow,iclose)
     xs=close_ph[i-PERIOD:i]-open_ph[i-PERIOD]
     decision=decide(xs)
     oop_now=tf.not_equal(decision*tf.cast(tf.equal(orders,0),tf.int32),0)
-    # orders=tf.Print(orders,[orders],message='orders1:')
-    # oop_now=tf.Print(oop_now,[oop_now],message='oop_now:')
-    # decision=tf.Print(decision,[decision],message='decision:')
+    #orders=tf.Print(orders,[orders],message='orders1:',summarize=100)
+    #oop_now=tf.Print(oop_now,[oop_now],message='oop_now:',summarize=100)
+    #decision=tf.Print(decision,[decision],message='decision:',summarize=100)
+    
     oop=oop+tf.cast(oop_now,tf.float32)*iclose
-    # oop=tf.Print(oop,[oop],message='oop:')
+    #oop=tf.Print(oop,[oop],message='oop after:',summarize=100)
     orders+=(decision)*tf.cast(tf.equal(orders,0),tf.int32)
     orders*=tf.cast(tf.greater(blances,0),tf.int32)
     # orders=tf.Print(orders,[orders],message='orders2:')
@@ -132,11 +143,11 @@ def move(i,blances,orders,oop):
     # oop=tf.Print(oop,[oop],message='oop:')
     return i,blances,orders,oop
 
-def try_in_market():
+def try_in_market(i):
     blances=tf.constant(INITIAL_FOUNDS,tf.float32,[NTRADERS])
     orders=tf.constant(0,tf.int32,[NTRADERS])
     oop=tf.constant(0,tf.float32,[NTRADERS])
-    i=tf.constant(PERIOD)
+    #i=loop_ph
     i,blances,orders,oop=tf.while_loop(lambda x,b,o,op:x<tf.size(close_ph),move,[i,blances,orders,oop])
     return blances,orders,oop
 
@@ -171,6 +182,8 @@ def init(sess,w1_value,b1_value,w2_value):
     sess.run(tf.assign(b1,b1_value))
     sess.run(tf.assign(w2,w2_value))
 
+
+
 def train(fname):
     sess=tf.Session()
     sess.run(tf.global_variables_initializer())
@@ -182,21 +195,25 @@ def train(fname):
     columns=['date','time','open','high','low','close','volume']
     train_data=pd.read_csv(fname,header=None)
     train_data.columns=columns
-    blances,orders,oop=try_in_market()
+    loop_ph=tf.placeholder(dtype=tf.int32)
+    blances,orders,oop=try_in_market(loop_ph)
     reproduce_op=reproduce(best_ph)
+    
     for e in range(0,EPOCH):
         starttime=time.time()
-        bt,ot,opt=sess.run([blances,orders,oop],feed_dict={open_ph:train_data['open'],close_ph:train_data['close'],high_ph:train_data['high'],low_ph:train_data['low']})
-        bit=bt.argmax()
-        mit=bt[bit]
-        best=bit
-        # if os.path.exists(DUMP_PATH):
-            # os.rename(DUMP_PATH,DUMP_PATH+'_'+time.strftime('%Y_%m_%d_%H_%M_%S',time.gmtime(time.time())))
-        with open(DUMP_PATH,'wb') as f:
-            w1_value,b1_value,w2_value=sess.run([w1,b1,w2])
-            pickle.dump((best,w1_value,b1_value,w2_value),f)
-        sess.run(reproduce_op,feed_dict={best_ph:best})
-        endtime=time.time()
+        for i in range(PERIOD,len(train_data)-PERIOD):
+            bt,ot,opt=sess.run([blances,orders,oop],
+                feed_dict={open_ph:train_data['open'],close_ph:train_data['close'],high_ph:train_data['high'],low_ph:train_data['low'],loop_ph:i})
+            bit=bt.argmax()
+            mit=bt[bit]
+            best=bit
+            # if os.path.exists(DUMP_PATH):
+                # os.rename(DUMP_PATH,DUMP_PATH+'_'+time.strftime('%Y_%m_%d_%H_%M_%S',time.gmtime(time.time())))
+            with open(DUMP_PATH,'wb') as f:
+                w1_value,b1_value,w2_value=sess.run([w1,b1,w2])
+                pickle.dump((best,w1_value,b1_value,w2_value),f)
+            sess.run(reproduce_op,feed_dict={best_ph:best})
+            endtime=time.time()
         print('epoch:%2d time:%3d bit:%3d mit:%5f'%
               (e,endtime-starttime,bit,mit))
 
@@ -331,11 +348,15 @@ def listen():
             data=tcpClientSock.recv(BUFSIZE)
             strs=data.decode().strip('\x00').split(',')
             # d=[strs[0],strs[1],float(strs[3]),float(strs[4]),float(str[5]),float(str[6])]
-            date=strs[0];minute=strs[1];topen=float(strs[2]);thigh=float(strs[3]);tlow=float(strs[4]);tclose=float(strs[5])
+            cmd=strs[0];date=strs[1];minute=strs[2];topen=float(strs[3]);thigh=float(strs[4]);tlow=float(strs[5]);tclose=float(strs[6])
             d=[[date,minute,topen,thigh,tlow,tclose,0]]
             item=pd.DataFrame(d,columns=columns)
             df=pd.concat([df,item],ignore_index=True)
             if len(df)<PERIOD:
+                tcpClientSock.send('0'.encode())
+                continue
+            if cmd=='INIT':
+                print('init data')
                 tcpClientSock.send('0'.encode())
                 continue
             index=len(df)
@@ -343,8 +364,16 @@ def listen():
             xc=np.array(df['close'][index-PERIOD:index],dtype=np.float32)
             xh=np.array(df['high'][index-PERIOD:index],dtype=np.float32)
             xl=np.array(df['low'][index-PERIOD:index],dtype=np.float32)
+            #print('before run',op)
             b,o,op=sess.run([op_b,op_o,op_op],feed_dict={open_ph:xo,close_ph:xc,high_ph:xh,low_ph:xl,blances_ph:b,orders_ph:o,oop_ph:op})
-
+            #print('after run',op)
+            iopen=df.iloc[index-1]['open']
+            ihigh=df.iloc[index-1]['close']
+            iopen=df.iloc[index-1]['close']
+            iopen=df.iloc[index-1]['close']
+            # print(minute,'price:',df.iloc[index-1]['close'],'opm:',op[m],'bm:',b[m],'bt:',bt,'om:',o[m],'index:',index,
+                # 'open')
+            if op[m]==0:break
             if open_price==0:
                 open_price=df.iloc[index-1]['close'];
                 open_time=df.iloc[index-1]['date']+' '+df.iloc[index-1]['time']
@@ -355,12 +384,14 @@ def listen():
                 print('%s open at %f close at %f dir:%d profit:%f'%(open_time,open_price,close_price,d,(b[m]-bt)))
                 open_price=close_price
                 open_time=df.iloc[index-1]['date']+' '+df.iloc[index-1]['time']
-                bt=b[m]
                 am=b.argmax()
                 nmax=b[am]
+                #m=am
+                bt=b[m]    
                 print('oopm:%5f bm:%5d om:%1d am:%2d max:%5d'%(op[m],b[m],o[m],am,nmax))
                 tcpClientSock.send(str(o[m]).encode())
-            else:tcpClientSock.send(str(0).encode())
+            else:
+                tcpClientSock.send(str(0).encode())
             if bar>30:
                 df.to_csv(time.strftime('%Y_%m_%d',time.gmtime(time.time()))+'.csv',header=None,index=None);bar=0;
             bar+=1
@@ -371,7 +402,69 @@ def listen():
             raise()
     tcpClientSock.close()
 
+def listen2():
+    blances=np.full((NTRADERS),INITIAL_FOUNDS,dtype=np.float32)
+    orders=np.full((NTRADERS),0,dtype=np.int32)
+    oop=np.full((NTRADERS),0,dtype=np.float32)
+    _,op_b,op_o,op_op=move(PERIOD,blances_ph,orders_ph,oop_ph)
 
+    b,o,op=blances,orders,oop
+    columns=['date','time','open','high','low','close','volume']
+    df=pd.DataFrame(columns=columns)
+    sess=tf.Session()
+    sess.run(tf.global_variables_initializer())
+
+    if not os.path.exists(DUMP_PATH):
+        print('there is no traders availeble');return
+    if os.path.exists(DUMP_PATH):
+        with open(DUMP_PATH,'rb') as f:
+            m,w1_value,b1_value,w2_value=pickle.load(f)
+            init(sess,w1_value,b1_value,w2_value)
+
+    bar=0
+    sock=socket(AF_INET, SOCK_STREAM)
+    sock.setsockopt(SOL_SOCKET,SO_REUSEADDR, 1)
+    sock.bind(ADDR)
+    sock.listen(5)
+    print('waiting for connection')
+    bt,open_price,close_price=0.0,0.0,0.0
+    open_time=''
+    d=0
+    while True:
+        tcpClientSock, addr=sock.accept()
+        try:
+            data=tcpClientSock.recv(BUFSIZE)
+            strs=data.decode().strip('\x00').split(',')
+            # d=[strs[0],strs[1],float(strs[3]),float(strs[4]),float(str[5]),float(str[6])]
+            cmd=strs[0];date=strs[1];minute=strs[2];topen=float(strs[3]);thigh=float(strs[4]);tlow=float(strs[5]);tclose=float(strs[6])
+            d=[[date,minute,topen,thigh,tlow,tclose,0]]
+            item=pd.DataFrame(d,columns=columns)
+            df=pd.concat([df,item],ignore_index=True)
+            if len(df)<PERIOD:
+                tcpClientSock.send('0'.encode())
+                continue
+            if cmd=='INIT':
+                tcpClientSock.send('0'.encode())
+                continue
+            index=len(df)
+            xo=np.array(df['open'][index-PERIOD:index],dtype=np.float32)
+            xc=np.array(df['close'][index-PERIOD:index],dtype=np.float32)
+            xh=np.array(df['high'][index-PERIOD:index],dtype=np.float32)
+            xl=np.array(df['low'][index-PERIOD:index],dtype=np.float32)
+            #print('before run',op)
+            b,o,op=sess.run([op_b,op_o,op_op],feed_dict={open_ph:xo,close_ph:xc,high_ph:xh,low_ph:xl,blances_ph:b,orders_ph:o,oop_ph:op})
+            tcpClientSock.send(str(o[m]).encode())
+            if bar>30:
+                df.to_csv(time.strftime('%Y_%m_%d',time.gmtime(time.time()))+'.csv',header=None,index=None);bar=0;
+            bar+=1
+        except KeyboardInterrupt:
+            tcpClientSock.close()
+        except:
+            tcpClientSock.close()
+            raise()
+    tcpClientSock.close()
+    
+    
 if sys.argv[1]=='train':
     train(sys.argv[2])
 if sys.argv[1]=='train2':
@@ -380,5 +473,7 @@ if sys.argv[1]=='train2':
     # pred(sys.argv[2])
 if sys.argv[1]=='listen':
     listen()
+if sys.argv[1]=='listen2':
+    listen2()
 if sys.argv[1]=='online':
     online(sys.argv[2])
