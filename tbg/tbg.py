@@ -130,7 +130,7 @@ def move(i,blances,orders,oop):
     #orders=tf.Print(orders,[orders],message='orders1:',summarize=100)
     #oop_now=tf.Print(oop_now,[oop_now],message='oop_now:',summarize=100)
     #decision=tf.Print(decision,[decision],message='decision:',summarize=100)
-    
+
     oop=oop+tf.cast(oop_now,tf.float32)*iclose
     #oop=tf.Print(oop,[oop],message='oop after:',summarize=100)
     orders+=(decision)*tf.cast(tf.equal(orders,0),tf.int32)
@@ -198,7 +198,7 @@ def train(fname):
     loop_ph=tf.placeholder(dtype=tf.int32)
     blances,orders,oop=try_in_market(loop_ph)
     reproduce_op=reproduce(best_ph)
-    
+
     for e in range(0,EPOCH):
         starttime=time.time()
         for i in range(PERIOD,len(train_data)-PERIOD):
@@ -353,7 +353,7 @@ def listen():
             item=pd.DataFrame(d,columns=columns)
             df=pd.concat([df,item],ignore_index=True)
             if len(df)<PERIOD:
-                tcpClientSock.send('0'.encode())
+                tcpClientSock.send(str(0).encode())
                 continue
             if cmd=='INIT':
                 print('init data')
@@ -387,7 +387,7 @@ def listen():
                 am=b.argmax()
                 nmax=b[am]
                 #m=am
-                bt=b[m]    
+                bt=b[m]
                 print('oopm:%5f bm:%5d om:%1d am:%2d max:%5d'%(op[m],b[m],o[m],am,nmax))
                 tcpClientSock.send(str(o[m]).encode())
             else:
@@ -463,8 +463,8 @@ def listen2():
             tcpClientSock.close()
             raise()
     tcpClientSock.close()
-    
-    
+
+
 if sys.argv[1]=='train':
     train(sys.argv[2])
 if sys.argv[1]=='train2':
