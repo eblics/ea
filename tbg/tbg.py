@@ -319,7 +319,8 @@ def online(fname):
 HOST='0.0.0.0'
 PORT=8899
 ADDR=(HOST, PORT)
-BUFSIZE=64
+# CMD_SIZE=64
+BUFSIZE=12;
 
 def listen():
     blances=np.full((NTRADERS),INITIAL_FOUNDS,dtype=np.float32)
@@ -352,24 +353,35 @@ def listen():
         try:
             data=tcpClientSock.recv(BUFSIZE)
             strs=data.decode().strip('\x00').split(',')
-            # d=[strs[0],strs[1],float(strs[3]),float(strs[4]),float(str[5]),float(str[6])]
-            cmd=strs[0];date=strs[1];minute=strs[2];topen=float(strs[3]);thigh=float(strs[4]);tlow=float(strs[5]);tclose=float(strs[6])
-            if cmd=='REIN':
-                print('reinit')
+            cmd=strs[0]
+            buflen=int(strs[1])
+            data=b''
+            while len(data)<buflen:
+                data+=tcpClientSock.recv(buflen-len(data))
+            data=data.decode().strip('\x00')
+            # print(data)
+            if cmd=='INIT':
                 b,o,op=blances,orders,oop
                 bt,open_price,close_price,open_time=0.0,0.0,0.0,''
                 df=df[0:0]
                 tcpClientSock.send(str(0).encode())
-                continue
-            d=[[date,minute,topen,thigh,tlow,tclose,0]]
-            item=pd.DataFrame(d,columns=columns)
-            df=pd.concat([df,item],ignore_index=True)
+                for sg in data.split(';'):
+                    if len(sg)==0:continue
+                    s=sg.split(',')
+                    date=s[0];minute=s[1];topen=float(s[2]);thigh=float(s[3]);tlow=float(s[4]);tclose=float(s[5])
+                    d=[[date,minute,topen,thigh,tlow,tclose,0]]
+                    item=pd.DataFrame(d,columns=columns)
+                    df=pd.concat([df,item],ignore_index=True)
+                print('init finished ',len(df))
+
+            if cmd=="TICK":
+                s=data.split(',')
+                date=s[0];minute=s[1];topen=float(s[2]);thigh=float(s[3]);tlow=float(s[4]);tclose=float(s[5])
+                d=[[date,minute,topen,thigh,tlow,tclose,0]]
+                item=pd.DataFrame(d,columns=columns)
+                df=pd.concat([df,item],ignore_index=True)
             if len(df)<PERIOD:
                 tcpClientSock.send(str(0).encode())
-                continue
-            if cmd=='INIT':
-                print('init data')
-                tcpClientSock.send('0'.encode())
                 continue
             index=len(df)
             xo=np.array(df['open'][index-PERIOD:index],dtype=np.float32)
@@ -409,7 +421,7 @@ def listen():
                 with open(DUMP_PATH,'rb') as f:
                     m,w1_value,b1_value,w2_value=pickle.load(f)
                     init(sess,w1_value,b1_value,w2_value)
-                
+
                 bar+=1
         except KeyboardInterrupt:
             tcpClientSock.close()
