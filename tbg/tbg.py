@@ -147,7 +147,7 @@ def try_in_market(i):
     blances=tf.constant(INITIAL_FOUNDS,tf.float32,[NTRADERS])
     orders=tf.constant(0,tf.int32,[NTRADERS])
     oop=tf.constant(0,tf.float32,[NTRADERS])
-    #i=loop_ph
+    i=tf.constant(PERIOD)
     i,blances,orders,oop=tf.while_loop(lambda x,b,o,op:x<tf.size(close_ph),move,[i,blances,orders,oop])
     return blances,orders,oop
 
@@ -200,22 +200,29 @@ def train(fname):
     reproduce_op=reproduce(best_ph)
 
     for e in range(0,EPOCH):
-        starttime=time.time()
-        for i in range(PERIOD,len(train_data)-PERIOD):
+        estarttime=time.time()
+        for i in range(0,len(train_data)-5*1440):
+            starttime=time.time()
+            xo=train_data[i:]['open']
+            xc=train_data[i:]['close']
+            xh=train_data[i:]['high']
+            xl=train_data[i:]['low']
             bt,ot,opt=sess.run([blances,orders,oop],
-                feed_dict={open_ph:train_data['open'],close_ph:train_data['close'],high_ph:train_data['high'],low_ph:train_data['low'],loop_ph:i})
+                feed_dict={open_ph:xo,close_ph:xc,high_ph:xh,low_ph:xl})
             bit=bt.argmax()
             mit=bt[bit]
             best=bit
-            # if os.path.exists(DUMP_PATH):
-                # os.rename(DUMP_PATH,DUMP_PATH+'_'+time.strftime('%Y_%m_%d_%H_%M_%S',time.gmtime(time.time())))
+            endtime=time.time()
+            print('period:%2d time:%3d bit:%3d mit:%5f'%(i,endtime-starttime,bit,mit))
             with open(DUMP_PATH,'wb') as f:
                 w1_value,b1_value,w2_value=sess.run([w1,b1,w2])
                 pickle.dump((best,w1_value,b1_value,w2_value),f)
             sess.run(reproduce_op,feed_dict={best_ph:best})
             endtime=time.time()
-        print('epoch:%2d time:%3d bit:%3d mit:%5f'%
-              (e,endtime-starttime,bit,mit))
+        if os.path.exists(DUMP_PATH):
+            os.rename(DUMP_PATH,DUMP_PATH+'_'+time.strftime('%Y_%m_%d_%H_%M_%S',time.gmtime(time.time())))
+        eendtime=time.time()
+        print('epoch:%2d time:%3d bit:%3d mit:%5f'%(e,eendtime-estarttime,bit,mit))
 
 def train2(fname):
     sess=tf.Session()
@@ -339,9 +346,7 @@ def listen():
     sock.bind(ADDR)
     sock.listen(5)
     print('waiting for connection')
-    bt,open_price,close_price=0.0,0.0,0.0
-    open_time=''
-    d=0
+    bt,open_price,close_price,open_time=0.0,0.0,0.0,''
     while True:
         tcpClientSock, addr=sock.accept()
         try:
@@ -349,6 +354,13 @@ def listen():
             strs=data.decode().strip('\x00').split(',')
             # d=[strs[0],strs[1],float(strs[3]),float(strs[4]),float(str[5]),float(str[6])]
             cmd=strs[0];date=strs[1];minute=strs[2];topen=float(strs[3]);thigh=float(strs[4]);tlow=float(strs[5]);tclose=float(strs[6])
+            if cmd=='REIN':
+                print('reinit')
+                b,o,op=blances,orders,oop
+                bt,open_price,close_price,open_time=0.0,0.0,0.0,''
+                df=df[0:0]
+                tcpClientSock.send(str(0).encode())
+                continue
             d=[[date,minute,topen,thigh,tlow,tclose,0]]
             item=pd.DataFrame(d,columns=columns)
             df=pd.concat([df,item],ignore_index=True)
