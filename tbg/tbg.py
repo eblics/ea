@@ -20,7 +20,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 NTRADERS=100
 NHIDDEN=1
 INITIAL_FOUNDS=1000.0
-PERIOD=55
+PERIOD=1440
 LOTS=0.5
 GAP=40.0
 GAP_FLOAT=0.00001*GAP
@@ -404,9 +404,13 @@ def listen():
                 tcpClientSock.send(str(o[m]).encode())
             else:
                 tcpClientSock.send(str(0).encode())
-            if bar>30:
+            if bar>1440:
                 df.to_csv(time.strftime('%Y_%m_%d',time.gmtime(time.time()))+'.csv',header=None,index=None);bar=0;
-            bar+=1
+                with open(DUMP_PATH,'rb') as f:
+                    m,w1_value,b1_value,w2_value=pickle.load(f)
+                    init(sess,w1_value,b1_value,w2_value)
+                
+                bar+=1
         except KeyboardInterrupt:
             tcpClientSock.close()
         except:
