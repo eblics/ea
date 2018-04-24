@@ -73,8 +73,13 @@ def h1_to_volat():
         # break
         data=[]
         for index,row in chunk.iterrows():
+<<<<<<< HEAD
+            data.append([row['CLOSE']-row['OPEN'],row['HIGH']-row['LOW']])
+        outdf=pd.DataFrame(data,columns=['CO','HL'])
+=======
             data.append([row['TIME'],row['CLOSE']-row['OPEN']])
         outdf=pd.DataFrame(data,columns=['TIME','VOL'])
+>>>>>>> 883936747d99c6bfaf557db60b993dead6d4894e
         outdf.to_csv(FLAGS.outpath,header=header,index=False,sep='\t',mode='a')
         header=False
 
