@@ -19,8 +19,8 @@
 //#property  indicator_width3  1
 #include <MovingAverages.mqh>
 input int Period=13;
-input int PeriodV=5;
-input int PeriodU=33;
+//input int PeriodV=5;
+//input int PeriodU=33;
 
 //--- buffers
 double ExtVBuffer[];
@@ -89,15 +89,16 @@ void CalculateSU(int rates_total,int prev_calculated,const double &open[],const 
    else
       limit=prev_calculated-1;
    for(i=limit; i<rates_total && !IsStopped(); i++){
-	 double sum=0,var=0;
+	 double sum=0,var=0,var2;
 	 double sign=1;
 	 for(int j=i;j>i-Period;j--){
-	    sum+=close[j]-open[j];
-	    var+=(close[j]-open[j])*(close[j]-open[j]);
+	    sum+=close[j]*close[i-Period];
+	    var+=(close[j])*(close[j]);
+	    var2+=close[i-Period]*close[i-Period];
 	 }
 	 if(close[i]-close[i-Period]<0) sign=-1;
 	 //PrintFormat("%f %f",sum,var);
-	 ExtVBuffer[i]=MathArcsin(sum/MathSqrt(var*Period));
+	 ExtVBuffer[i]=sign*MathArccos(sum/MathSqrt(var*var2));
     }
   }
 
