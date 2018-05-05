@@ -10,7 +10,7 @@
 #define MAGICMA  20131111
 //--- Inputs
 input double Lots          =0.1;
-input double MaximumRisk   =1;
+input double MaximumRisk   =0.1;
 input double DecreaseFactor=3;
 double MINU=0.000012;
 double MAXU=0.00004;
@@ -50,6 +50,7 @@ int CalculateCurrentOrders(string symbol)
 //+------------------------------------------------------------------+
 double LotsOptimized()
   {
+   //return Lots;
    double lot=Lots;
    int    orders=HistoryTotal();     // history orders total
    int    losses=0;                  // number of losses orders without a break
