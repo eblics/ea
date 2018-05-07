@@ -16,7 +16,7 @@ input double MINU=0.2;
 //input double MAXU=7.05;
 //input double MAXV=286;
 double MINV=20;
-//input double VFACTOR1=-0.166;
+input double VFACTOR1=0;
 input double VFACTOR2=1.5;
 input double VFACTOR3=3;
 input int    MovingPeriod  =144;
@@ -76,33 +76,6 @@ double LotsOptimized()
      }
 //--- return lot size
    if(lot<0.01) lot=0.01;
-   return(lot);
-  }
-  
-double LotsOptimized2()
-  {
-   //return Lots;
-   double lot=Lots;
-   int    orders=HistoryTotal();     // history orders total
-   int    losses=0;                  // number of losses orders without a break
-   int flag=1;
-   int ticket=-1;
-   datetime time;
-   lot=NormalizeDouble(AccountFreeMargin()*MaximumRisk/1000.0,2);
-   if(orders<2)return lot;
-   if(OrderSelect(orders-1,SELECT_BY_POS,MODE_HISTORY)==false)
-   {
-       Print("Error in history!");
-       return 0;
-   }
-   if(OrderProfit()<0)losses+=1;   
-   if(OrderSelect(orders-2,SELECT_BY_POS,MODE_HISTORY)==false)
-   {
-       Print("Error in history!");
-       return 0;
-   }
-   if(OrderProfit()<0)losses+=1;
-   if(losses>=2)return 0.01;
    return(lot);
   }
   
@@ -266,7 +239,6 @@ void CheckForOpen()
 //+------------------------------------------------------------------+
 void CheckForClose()
 {
-    return;
     double price,u,v,maxv,b,ma,ma_pre,stoploss,takeprofit,open,close,ima;
     int    res;
     if(Volume[0]>1) return;
@@ -284,7 +256,7 @@ void CheckForClose()
     {
       if(OrderSelect(i,SELECT_BY_POS,MODE_TRADES)==false) break;
       if(OrderType()==OP_BUY){
-        if(b>v){
+        if(b>v*VFACTOR1){
             if(!OrderClose(OrderTicket(),OrderLots(),Bid,3,White))
                 Print("OrderClose error ",GetLastError());
             else{
@@ -294,7 +266,7 @@ void CheckForClose()
          }
       }
       if(OrderType()==OP_SELL){
-        if(-b>v){
+        if(-b>v*VFACTOR1){
             if(!OrderClose(OrderTicket(),OrderLots(),Ask,3,White))
                 Print("OrderClose error ",GetLastError());
             else{
