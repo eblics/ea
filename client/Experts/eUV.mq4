@@ -11,13 +11,13 @@
 //--- Inputs
 input double Lots          =0.1;
 input double MaximumRisk   =0.1;
-//input double DecreaseFactor=3;
+input double DecreaseFactor=3;
 input double MINU=0.2;
 //input double MAXU=7.05;
 //input double MAXV=286;
 double MINV=20;
 //input double VFACTOR1=-0.166;
-//input double VFACTOR2=0.59;
+input double VFACTOR2=1.5;
 input double VFACTOR3=3;
 input int    MovingPeriod  =144;
 input int    MovingShift   =0;
@@ -48,8 +48,38 @@ int CalculateCurrentOrders(string symbol)
    if(buys>0) return(buys);
    else       return(-sells);
   }
-
 double LotsOptimized()
+  {
+   double lot=Lots;
+   int    orders=HistoryTotal();     // history orders total
+   int    losses=0;                  // number of losses orders without a break
+//--- select lot size
+   lot=NormalizeDouble(AccountFreeMargin()*MaximumRisk/1000.0,2);
+//--- calcuulate number of losses orders without a break
+   if(DecreaseFactor>0)
+     {
+      for(int i=orders-1;i>=0;i--)
+        {
+         if(OrderSelect(i,SELECT_BY_POS,MODE_HISTORY)==false)
+           {
+            Print("Error in history!");
+            break;
+           }
+         if(OrderSymbol()!=Symbol() || OrderType()>OP_SELL)
+            continue;
+         //---
+         if(OrderProfit()>0) break;
+         if(OrderProfit()<0) losses++;
+        }
+      if(losses>1)
+         lot=NormalizeDouble(lot-lot*losses/DecreaseFactor,1);
+     }
+//--- return lot size
+   if(lot<0.01) lot=0.01;
+   return(lot);
+  }
+  
+double LotsOptimized2()
   {
    //return Lots;
    double lot=Lots;
@@ -211,7 +241,7 @@ void CheckForOpen()
     //PrintFormat("open:%f close:%f ma:%f u:%f v:%f op_u:%f op_v:%f  b:%f v1:%f v2:%f v3:%f",open,close,ma,u,v,op_u,op_v,b,v*VFACTOR1,v*VFACTOR2,v*VFACTOR3);
     
     if(-b>=v*VFACTOR3){
-        stoploss=Bid-maxv*Point;
+        stoploss=Bid-VFACTOR2*maxv*Point;
         //takeprofit=ma+v*Point;
         takeprofit=ma;
         res=OrderSend(Symbol(),OP_BUY,LotsOptimized(),Ask,3,stoploss,takeprofit,"",MAGICMA,0,Blue);
@@ -221,7 +251,7 @@ void CheckForOpen()
         return;
     }
     if(b>=v*VFACTOR3){
-        stoploss=Ask+maxv*Point;
+        stoploss=Ask+VFACTOR2*maxv*Point;
         //takeprofit=ma-v*Point;
         takeprofit=ma;
         res=OrderSend(Symbol(),OP_SELL,LotsOptimized(),Bid,3,stoploss,takeprofit,"",MAGICMA,0,Red);
