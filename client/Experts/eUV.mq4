@@ -202,7 +202,6 @@ void OnTick()
 
 void CheckForOpen()
   {
-   PrintFormat("current orders:%d",CalculateCurrentOrders(Symbol()));
    double price,u,v,maxv,b,ma,ma_pre,stoploss,takeprofit,open,close,ima;
    int    res;
    if(Volume[0]>1) return;
