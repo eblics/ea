@@ -205,6 +205,7 @@ void CheckForOpen()
    double price,u,v,maxv,b,ma,ma_pre,stoploss,takeprofit,open,close,ima;
    int    res;
    if(Volume[0]>1) return;
+   if(Ask-Bid>3)return;
     u=GetU();
     v=GetV();  
     maxv=GetMaxV();
@@ -244,6 +245,7 @@ void CheckForClose()
     double price,u,v,maxv,b,ma,ma_pre,stoploss,takeprofit,open,close,ima;
     int    res;
     if(Volume[0]>1) return;
+    
     u=GetU();
     v=GetV();  
     maxv=GetMaxV();
