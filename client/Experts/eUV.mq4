@@ -216,7 +216,7 @@ void CheckForOpen()
     PrintFormat("checkforopen u:%f v:%f maxv:%f b:%f,Ask:%f Bid:%f ma:%f ma_pre:%f ",u,v,maxv,b,Ask,Bid,ma,ma_pre);
     
     if(-b>=v*vfactor3){
-        stoploss=Bid-vfactor2*maxv*Point;
+        stoploss=Bid-vfactor2*v*Point;
         //takeprofit=ma+v*Point;
         takeprofit=ma;
         res=OrderSend(Symbol(),OP_BUY,LotsOptimized(),Ask,3,stoploss,takeprofit,"",MAGICMA,0,Blue);
@@ -226,7 +226,7 @@ void CheckForOpen()
         return;
     }
     if(b>=v*vfactor3){
-        stoploss=Ask+vfactor2*maxv*Point;
+        stoploss=Ask+vfactor2*v*Point;
         //takeprofit=ma-v*Point;
         takeprofit=ma;
         res=OrderSend(Symbol(),OP_SELL,LotsOptimized(),Bid,3,stoploss,takeprofit,"",MAGICMA,0,Red);
