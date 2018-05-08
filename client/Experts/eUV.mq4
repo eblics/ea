@@ -66,7 +66,7 @@ double LotsOptimized()
             Print("Error in history!");
             break;
            }
-         if(OrderSymbol()!=Symbol() || OrderType()>OP_SELL)
+         if(OrderSymbol()!=Symbol() ||OrderMagicNumber()!=MAGICMA|| OrderType()>OP_SELL)
             continue;
          //---
          if(OrderProfit()>0) break;
