@@ -202,6 +202,7 @@ void OnTick()
 
 void CheckForOpen()
   {
+   PrintFormat("current orders:%d",CalculateCurrentOrders(Symbol()));
    double price,u,v,maxv,b,ma,ma_pre,stoploss,takeprofit,open,close,ima;
    int    res;
    if(Volume[0]>1) return;
@@ -252,7 +253,7 @@ void CheckForClose()
     ma_pre=MA_Bars[PeriodU-1];
     ArraySetAsSeries(MA_Bars,false);
     b=(Bid-ma)/Point;
-    PrintFormat("checkforopen u:%f v:%f maxv:%f b:%f,Ask:%f Bid:%f ma:%f op_u:%f op_v:%f",u,v,maxv,b,Ask,Bid,ma,op_u,op_v);
+    PrintFormat("checkforclose u:%f v:%f maxv:%f b:%f,Ask:%f Bid:%f ma:%f op_u:%f op_v:%f",u,v,maxv,b,Ask,Bid,ma,op_u,op_v);
     if(maxv==0)return;
     for(int i=0;i<OrdersTotal();i++)
     {
