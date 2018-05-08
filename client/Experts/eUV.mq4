@@ -7,7 +7,7 @@
 #property link        "http://www.mql4.com"
 #property description "Moving Average sample expert advisor"
 
-#define MAGICMA  19820211
+#define MAGICMA  20131111
 //--- Inputs
 input double Lots          =0.1;
 input double MaximumRisk   =0.1;
@@ -27,6 +27,7 @@ int    Loses=0;
 //input int    TakeProfit=200;
 double MA_Bars[];
 double Var_Bars[];
+double vfactor1=VFACTOR1,vfactor2=VFACTOR2,vfactor3=VFACTOR3;
 int Ticket;
 
 
@@ -71,11 +72,14 @@ double LotsOptimized()
          if(OrderProfit()>0) break;
          if(OrderProfit()<0) losses++;
         }
-      if(losses>1)
-         lot=NormalizeDouble(lot-lot*losses/DecreaseFactor,1);
+      if(losses>1){
+         lot=NormalizeDouble(lot-lot*losses/DecreaseFactor,2);
+         //vfactor3=vfactor3+0.1*losses/DecreaseFactor;
+      }
      }
 //--- return lot size
    if(lot<0.01) lot=0.01;
+   //if(vfactor3>5)vfactor3=VFACTOR3;
    return(lot);
   }
   
@@ -210,27 +214,25 @@ void CheckForOpen()
     ArraySetAsSeries(MA_Bars,false);
     b=(Bid-ma)/Point;
     PrintFormat("checkforopen u:%f v:%f maxv:%f b:%f,Ask:%f Bid:%f ma:%f ma_pre:%f ",u,v,maxv,b,Ask,Bid,ma,ma_pre);
-    //if(maxv>200)return;
-    //PrintFormat("open:%f close:%f ma:%f u:%f v:%f op_u:%f op_v:%f  b:%f v1:%f v2:%f v3:%f",open,close,ma,u,v,op_u,op_v,b,v*VFACTOR1,v*VFACTOR2,v*VFACTOR3);
     
-    if(-b>=v*VFACTOR3){
-        stoploss=Bid-VFACTOR2*maxv*Point;
+    if(-b>=v*vfactor3){
+        stoploss=Bid-vfactor2*maxv*Point;
         //takeprofit=ma+v*Point;
         takeprofit=ma;
         res=OrderSend(Symbol(),OP_BUY,LotsOptimized(),Ask,3,stoploss,takeprofit,"",MAGICMA,0,Blue);
         op_u=u;op_v=v;
         Print("open buy because 1");
-        PrintFormat("Ask:%f Bid:%f open:%f close:%f ma:%f ima:%f ma_pre:%f u:%f v:%f b:%f op_u:%f op_v:%f",Ask,Bid,open,close,ma,ima,ma_pre,u,v,b,op_u,op_v);
+        PrintFormat("Ask:%f Bid:%f ma:%f %f u:%f v:%f b:%f op_u:%f op_v:%f",Ask,Bid,open,close,ma,ima,ma_pre,u,v,b,op_u,op_v);
         return;
     }
-    if(b>=v*VFACTOR3){
-        stoploss=Ask+VFACTOR2*maxv*Point;
+    if(b>=v*vfactor3){
+        stoploss=Ask+vfactor2*maxv*Point;
         //takeprofit=ma-v*Point;
         takeprofit=ma;
         res=OrderSend(Symbol(),OP_SELL,LotsOptimized(),Bid,3,stoploss,takeprofit,"",MAGICMA,0,Red);
         op_u=u;op_v=v;
         Print("open sell because 1");
-        PrintFormat("Ask:%f Bid:%f open:%f close:%f ma:%f ima:%f ma_pre:%f u:%f v:%f b:%f op_u:%f op_v:%f",Ask,Bid,open,close,ma,ima,ma_pre,u,v,b,op_u,op_v);
+        PrintFormat("Ask:%f Bid:%f ma:%f  u:%f v:%f b:%f op_u:%f op_v:%f",Ask,Bid,open,close,ma,ima,ma_pre,u,v,b,op_u,op_v);
         return;
     }
   }
@@ -250,14 +252,13 @@ void CheckForClose()
     ma_pre=MA_Bars[PeriodU-1];
     ArraySetAsSeries(MA_Bars,false);
     b=(Bid-ma)/Point;
-    PrintFormat("checkforopen u:%f v:%f maxv:%f b:%f,Ask:%f Bid:%f ma:%f ma_pre:%f ",u,v,maxv,b,Ask,Bid,ma,ma_pre);
+    PrintFormat("checkforopen u:%f v:%f maxv:%f b:%f,Ask:%f Bid:%f ma:%f ",u,v,maxv,b,Ask,Bid,ma,ma_pre);
     if(maxv==0)return;
     for(int i=0;i<OrdersTotal();i++)
     {
       if(OrderSelect(i,SELECT_BY_POS,MODE_TRADES)==false) break;
-      if(OrderSymbol()!=Symbol() || OrderMagicNumber()!=MAGICMA)continue;
       if(OrderType()==OP_BUY){
-        if(b>v*VFACTOR1){
+        if(b>v*vfactor1){
             if(!OrderClose(OrderTicket(),OrderLots(),Bid,3,White))
                 Print("OrderClose error ",GetLastError());
             else{
@@ -267,7 +268,7 @@ void CheckForClose()
          }
       }
       if(OrderType()==OP_SELL){
-        if(-b>v*VFACTOR1){
+        if(-b>v*vfactor1){
             if(!OrderClose(OrderTicket(),OrderLots(),Ask,3,White))
                 Print("OrderClose error ",GetLastError());
             else{
@@ -278,255 +279,3 @@ void CheckForClose()
       }
     }
 }
-
-
-//void CheckForOpen()
-//  {
-//   double price,u,v,b,ma,ma_pre,stoploss,open,close,ima;
-//   int    res;
-////--- go trading only for first tiks of new bar
-//   if(Volume[0]>1) return;
-//   //if(Loses<0)Loses=0;
-//   //if(Loses>=3){
-//   // PrintFormat("loses:%d",Loses);
-//   // //PeriodU+=17;
-//   //}
-//   //if(PeriodU>200)PeriodU=33;
-////--- get Moving Average 
-//    u=GetU();
-//    v=GetV();  
-//    ArraySetAsSeries(MA_Bars,true);
-//    //ma=MA_Bars[0];
-//    ma=iMA(NULL,0,MovingPeriod,MovingShift,MODE_SMA,PRICE_CLOSE,0);
-//    ma_pre=MA_Bars[PeriodU-1];
-//    ArraySetAsSeries(MA_Bars,false);
-//    b=(Bid-ma)/Point;
-//    open=Close[2];
-//    close=Bid;
-//    PrintFormat("checkforopen u:%f v:%f b:%f,Ask:%f Bid:%f ma:%f ma_pre:%f ",u,v,b,Ask,Bid,ma,ma_pre);
-//    //PrintFormat("open:%f close:%f ma:%f u:%f v:%f op_u:%f op_v:%f  b:%f v1:%f v2:%f v3:%f",open,close,ma,u,v,op_u,op_v,b,v*VFACTOR1,v*VFACTOR2,v*VFACTOR3);
-//    if(MathAbs(u)>MAXU||v>MAXV){
-//        PrintFormat("u:%f or v:%f is too big",u,v);
-//        return;
-//    }
-//    if(u>=MINU){
-//        if(b<v*VFACTOR1){
-//            stoploss=Bid-StopLoss*Point;
-//            res=OrderSend(Symbol(),OP_BUY,LotsOptimized(),Ask,3,stoploss,0,"",MAGICMA,0,Blue);
-//            op_u=u;op_v=v;
-//            Print("open buy because 1");
-//            PrintFormat("Ask:%f Bid:%f open:%f close:%f ma:%f ima:%f ma_pre:%f u:%f v:%f b:%f op_u:%f op_v:%f",Ask,Bid,open,close,ma,ima,ma_pre,u,v,b,op_u,op_v);
-//            return;
-//        }
-//    }
-//    if(u<=-MINU){
-//        if(-b<v*VFACTOR1){
-//            stoploss=Ask+StopLoss*Point;
-//            res=OrderSend(Symbol(),OP_SELL,LotsOptimized(),Bid,3,stoploss,0,"",MAGICMA,0,Red);
-//            op_u=u;op_v=v;
-//            Print("open sell because 1");
-//            PrintFormat("Ask:%f Bid:%f open:%f close:%f ma:%f ima:%f ma_pre:%f u:%f v:%f b:%f op_u:%f op_v:%f",Ask,Bid,open,close,ma,ima,ma_pre,u,v,b,op_u,op_v);
-//            return;
-//        }
-//    }
-//    if(MathAbs(u)<MINU){
-//        if(b>v*VFACTOR2){
-//            stoploss=Ask+StopLoss*Point;
-//            res=OrderSend(Symbol(),OP_SELL,LotsOptimized(),Bid,3,stoploss,0,"",MAGICMA,0,Red);
-//            op_u=u;op_v=v;
-//            Print("open sell because 2");
-//            PrintFormat("Ask:%f Bid:%f open:%f close:%f ma:%f ima:%f ma_pre:%f u:%f v:%f b:%f op_u:%f op_v:%f",Ask,Bid,open,close,ma,ima,ma_pre,u,v,b,op_u,op_v);
-//            return;
-//        }
-//        if(-b>v*VFACTOR2){
-//            stoploss=Bid-StopLoss*Point;
-//            res=OrderSend(Symbol(),OP_BUY,LotsOptimized(),Ask,3,stoploss,0,"",MAGICMA,0,Blue);
-//            op_u=u;op_v=v;
-//            Print("open buy because 2");
-//            PrintFormat("Ask:%f Bid:%f open:%f close:%f ma:%f ima:%f ma_pre:%f u:%f v:%f b:%f op_u:%f op_v:%f",Ask,Bid,open,close,ma,ima,ma_pre,u,v,b,op_u,op_v);
-//            return;
-//        }
-//    }
-//  }
-////+------------------------------------------------------------------+
-////| Check for close order conditions                                 |
-////+------------------------------------------------------------------+
-//void CheckForClose()
-//  {
-//   double ma,ma_pre,u,v,b,stoploss,open,close,ima;
-//   string date=TimeToStr(Time[0],TIME_DATE);
-//   string minute=TimeToStr(Time[0],TIME_MINUTES);
-//   //Print("minute",minute);
-////--- go trading only for first tiks of new bar
-//   if(Volume[0]>1) return;
-////--- get Moving Average 
-//    u=GetU();
-//    v=GetV();
-//    ArraySetAsSeries(MA_Bars,true);
-//    //ma=MA_Bars[0];
-//    ma=iMA(NULL,0,MovingPeriod,MovingShift,MODE_SMA,PRICE_CLOSE,0);
-//    ma_pre=MA_Bars[PeriodU-1];
-//    ArraySetAsSeries(MA_Bars,false);
-//    b=(Bid-ma)/Point;
-//    open=Close[2];
-//    close=Bid;
-//    //PrintFormat("checkforclose u:%f v:%f b:%f,Ask:%f Bid:%f ma:%f ma_pre:%f ",u,v,b,Ask,Bid,ma,ma_pre);
-//    //PrintFormat("open:%f close:%f ma:%f u:%f v:%f op_u:%f op_v:%f  b:%f v1:%f v2:%f v3:%f",open,close,ma,u,v,op_u,op_v,b,v*VFACTOR1,v*VFACTOR2,v*VFACTOR3);
-//
-//    
-//    //if(minute=="12:35"||minute=="12:37")PrintFormat("minute:%s u:%f minu:%f com:%d",minute,u/Point,MINU/Point,u<-MINU);
-//    //PrintFormat("Ask:%f Bid:%f ma:%f u:%f v:%f b:%f op_u:%f op_v:%f",Ask,Bid,ma,u,v,b,op_u,op_v);
-//   for(int i=0;i<OrdersTotal();i++)
-//     {
-//      if(OrderSelect(i,SELECT_BY_POS,MODE_TRADES)==false) break;
-//      if(OrderMagicNumber()!=MAGICMA || OrderSymbol()!=Symbol()) continue;
-//      //--- check order type 
-//      if(OrderType()==OP_BUY)
-//        {
-//         //if(Bid-OrderOpenPrice()>=30){
-//         //   stoploss=OrderOpenPrice()+10;
-//         //   if(OrderModify(OrderTicket(),OrderOpenPrice(),stoploss,OrderTakeProfit(),0,Blue)==false){
-//         //       PrintFormat("modify order#%d error:%d",OrderTicket(),GetLastError());
-//         //   }
-//         //}
-//         if(op_u>MINU&&MathAbs(u)>=MINU&&u<=0)
-//           {
-//                if(!OrderClose(OrderTicket(),OrderLots(),Bid,3,White))
-//                   Print("OrderClose error ",GetLastError());
-//                else{
-//                    Print("close buy because 1");
-//                    PrintFormat("Ask:%f Bid:%f open:%f close:%f ma:%f ima:%f ma_pre:%f u:%f v:%f b:%f op_u:%f op_v:%f",Ask,Bid,open,close,ma,ima,ma_pre,u,v,b,op_u,op_v);
-//                    if(OrderProfit()<0)Loses++; 
-//                    op_u=0;op_v=0;
-//                    continue;
-//                }
-//            
-//           }
-//           //if(op_u>MINU&&open>=ma&&close<=ma)
-//           //{
-//           //     if(!OrderClose(OrderTicket(),OrderLots(),Bid,3,White))
-//           //        Print("OrderClose error ",GetLastError());
-//           //     else{
-//           //         Print("close buy because 4");
-//           //         PrintFormat("Ask:%f Bid:%f open:%f close:%f ma:%f ima:%f ma_pre:%f u:%f v:%f b:%f op_u:%f op_v:%f",Ask,Bid,open,close,ma,ima,ma_pre,u,v,b,op_u,op_v);
-//           //         if(OrderProfit()<0)Loses++; 
-//           //         op_u=0;op_v=0;
-//           //         continue;
-//           //     }         
-//           //}
-//          if(op_u>MINU&&b>v*VFACTOR3){
-//            if(!OrderClose(OrderTicket(),OrderLots(),Bid,3,White))
-//               Print("OrderClose error ",GetLastError());
-//            else{
-//                Print("close buy because 2");
-//                PrintFormat("Ask:%f Bid:%f open:%f close:%f ma:%f ima:%f ma_pre:%f u:%f v:%f b:%f op_u:%f op_v:%f",Ask,Bid,open,close,ma,ima,ma_pre,u,v,b,op_u,op_v);
-//                if(OrderProfit()<0)Loses++; 
-//                op_u=0;op_v=0;
-//                continue;
-//            }  
-//          }
-//          if(MathAbs(op_u)<=MINU){
-//            if(u<-MINU)
-//            {
-//                if(!OrderClose(OrderTicket(),OrderLots(),Bid,3,White))
-//                   Print("OrderClose error ",GetLastError());
-//                else{
-//                    Print("close buy because 3");
-//                    PrintFormat("Ask:%f Bid:%f open:%f close:%f ma:%f ima:%f ma_pre:%f u:%f v:%f b:%f op_u:%f op_v:%f",Ask,Bid,open,close,ma,ima,ma_pre,u,v,b,op_u,op_v);
-//                    if(OrderProfit()<0)Loses++; 
-//                    op_u=0;op_v=0;
-//                    continue;
-//                }
-//            }
-//            if(MathAbs(u)<MINU&&b>v&&OrderProfit()>0){
-//                if(!OrderClose(OrderTicket(),OrderLots(),Bid,3,White))
-//                   Print("OrderClose error ",GetLastError());
-//                else{
-//                    Print("close buy because 4");
-//                    PrintFormat("Ask:%f Bid:%f open:%f close:%f ma:%f ima:%f ma_pre:%f u:%f v:%f b:%f op_u:%f op_v:%f",Ask,Bid,open,close,ma,ima,ma_pre,u,v,b,op_u,op_v);
-//                    if(OrderProfit()<0)Loses++; 
-//                    op_u=0;op_v=0;
-//                    continue;
-//                }
-//            }
-//          }
-//           
-//         break;
-//        }
-//      if(OrderType()==OP_SELL)
-//        {
-//         //if(OrderOpenPrice()-Ask>=30){
-//         //   stoploss=OrderOpenPrice()-10;
-//         //   if(OrderModify(OrderTicket(),OrderOpenPrice(),stoploss,OrderTakeProfit(),0,Blue)==false){
-//         //       PrintFormat("modify order#%d error:%d",OrderTicket(),GetLastError());
-//         //   }
-//         //}
-//         if(op_u<-MINU&&MathAbs(u)>MINU&&u>=0)
-//           {
-//            if(!OrderClose(OrderTicket(),OrderLots(),Ask,3,White))
-//               Print("OrderClose error ",GetLastError());
-//            else{
-//                Print("close sell because 1");
-//                PrintFormat("Ask:%f Bid:%f open:%f close:%f ma:%f ima:%f ma_pre:%f u:%f v:%f b:%f op_u:%f op_v:%f",Ask,Bid,open,close,ma,ima,ma_pre,u,v,b,op_u,op_v);
-//                if(OrderProfit()<0)Loses++; 
-//                op_u=0;op_v=0;
-//                continue;
-//            }
-//           }
-//           //if(op_u<-MINU&&open<=ma&&close>=ma)
-//           //{
-//           // if(!OrderClose(OrderTicket(),OrderLots(),Ask,3,White))
-//           //    Print("OrderClose error ",GetLastError());
-//           // else{
-//           //     Print("close sell because 4");
-//           //     PrintFormat("Ask:%f Bid:%f open:%f close:%f ma:%f ima:%f ma_pre:%f u:%f v:%f b:%f op_u:%f op_v:%f",Ask,Bid,open,close,ma,ima,ma_pre,u,v,b,op_u,op_v);
-//           //     if(OrderProfit()<0)Loses++; 
-//           //     op_u=0;op_v=0;
-//           //     continue;
-//           // }
-//           //}
-//         if(op_u<-MINU&&-b>v*VFACTOR3){
-//            if(!OrderClose(OrderTicket(),OrderLots(),Ask,3,White))
-//               Print("OrderClose error ",GetLastError());
-//            else{
-//                Print("close sell because 2");
-//                PrintFormat("Ask:%f Bid:%f open:%f close:%f ma:%f ima:%f ma_pre:%f u:%f v:%f b:%f op_u:%f op_v:%f",Ask,Bid,open,close,ma,ima,ma_pre,u,v,b,op_u,op_v);
-//                if(OrderProfit()<0)Loses++; 
-//                op_u=0;op_v=0;
-//                continue;
-//            }
-//         }
-//         if(MathAbs(op_u)<MINU){
-//            if(u>MINU){
-//                if(!OrderClose(OrderTicket(),OrderLots(),Ask,3,White))
-//                   Print("OrderClose error ",GetLastError());
-//                else{
-//                    Print("close sell because 3");
-//                    PrintFormat("Ask:%f Bid:%f open:%f close:%f ma:%f ima:%f ma_pre:%f u:%f v:%f b:%f op_u:%f op_v:%f",Ask,Bid,open,close,ma,ima,ma_pre,u,v,b,op_u,op_v);
-//                    if(OrderProfit()<0)Loses++; 
-//                    op_u=0;op_v=0;
-//                    continue;
-//                }
-//            }
-//            if(MathAbs(u)<MINU&&-b>v&&OrderProfit()>0)
-//            {
-//                if(!OrderClose(OrderTicket(),OrderLots(),Ask,3,White))
-//                   Print("OrderClose error ",GetLastError());
-//                else{
-//                    Print("close sell because 4");
-//                    PrintFormat("Ask:%f Bid:%f open:%f close:%f ma:%f ima:%f ma_pre:%f u:%f v:%f b:%f op_u:%f op_v:%f",Ask,Bid,open,close,ma,ima,ma_pre,u,v,b,op_u,op_v);
-//                    if(OrderProfit()<0)Loses++; 
-//                    op_u=0;op_v=0;
-//                    continue;
-//                }
-//            }
-//         }
-//         break;
-//        }
-//     }
-//  }
-
-//void OnInit()
-//{
-//    
-//}
