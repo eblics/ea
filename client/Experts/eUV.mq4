@@ -7,7 +7,7 @@
 #property link        "http://www.mql4.com"
 #property description "Moving Average sample expert advisor"
 
-#define MAGICMA  20131111
+#define MAGICMA  19820211
 //--- Inputs
 input double Lots          =0.1;
 input double MaximumRisk   =0.1;
@@ -257,6 +257,7 @@ void CheckForClose()
     for(int i=0;i<OrdersTotal();i++)
     {
       if(OrderSelect(i,SELECT_BY_POS,MODE_TRADES)==false) break;
+      if(OrderMagicNumber()!=MAGICMA || OrderSymbol()!=Symbol()) continue;
       if(OrderType()==OP_BUY){
         if(b>v*vfactor1){
             if(!OrderClose(OrderTicket(),OrderLots(),Bid,3,White))
