@@ -224,7 +224,7 @@ void CheckForOpen()
         res=OrderSend(Symbol(),OP_BUY,LotsOptimized(),Ask,3,stoploss,takeprofit,"",MAGICMA,0,Blue);
         op_u=u;op_v=v;
         Print("open buy because 1");
-        PrintFormat("Ask:%f Bid:%f ma:%f %f u:%f v:%f b:%f op_u:%f op_v:%f",Ask,Bid,open,close,ma,ima,ma_pre,u,v,b,op_u,op_v);
+        PrintFormat("Ask:%f Bid:%f ma:%f %f u:%f v:%f b:%f op_u:%f op_v:%f",Ask,Bid,open,close,ma,u,v,b,op_u,op_v);
         return;
     }
     if(b>=v*vfactor3){
@@ -234,7 +234,7 @@ void CheckForOpen()
         res=OrderSend(Symbol(),OP_SELL,LotsOptimized(),Bid,3,stoploss,takeprofit,"",MAGICMA,0,Red);
         op_u=u;op_v=v;
         Print("open sell because 1");
-        PrintFormat("Ask:%f Bid:%f ma:%f  u:%f v:%f b:%f op_u:%f op_v:%f",Ask,Bid,open,close,ma,ima,ma_pre,u,v,b,op_u,op_v);
+        PrintFormat("Ask:%f Bid:%f ma:%f u:%f v:%f b:%f op_u:%f op_v:%f",Ask,Bid,open,close,ma,u,v,b,op_u,op_v);
         return;
     }
   }
