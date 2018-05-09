@@ -10,16 +10,16 @@
 #define MAGICMA  19820211
 //--- Inputs
 input double Lots          =0.1;
-input double MaximumRisk   =0.1;
-input double DecreaseFactor=3;
+input double MaximumRisk   =0.01;
+input double DecreaseFactor=9;
 input double MINU=0.2;
 //input double MAXU=7.05;
 //input double MAXV=286;
 double MINV=20;
 input double VFACTOR1=0;
-input double VFACTOR2=1.5;
+input double VFACTOR2=2;
 input double VFACTOR3=3;
-input double VFACTOR4=0.5;
+input double VFACTOR4=0.33;
 input int    MovingPeriod  =144;
 input int    MovingShift   =0;
 input int    PeriodU=5;
