@@ -243,7 +243,7 @@ void CheckForOpen()
 //+------------------------------------------------------------------+
 void CheckForClose()
 {
-    double price,u,v,maxv,b,ma,ma_pre,stoploss,takeprofit,open,close,ima;
+    double price,u,v,maxv,b,ma,ma_pre,stoploss,takeprofit,open,close,ima,diff;
     int    res;
     if(Volume[0]>1) return;
     
@@ -262,8 +262,9 @@ void CheckForClose()
       if(OrderSelect(i,SELECT_BY_POS,MODE_TRADES)==false) break;
       if(OrderMagicNumber()!=MAGICMA || OrderSymbol()!=Symbol()) continue;
       if(OrderType()==OP_BUY){
-        if(Bid-OrderOpenPrice()>=v*Point){
-            OrderModify(OrderTicket(),OrderOpenPrice(),OrderOpenPrice()+v*VFACTOR4*Point,OrderTakeProfit(),NULL,Blue);
+        diff=Bid-OrderOpenPrice();
+        if(diff>=v*Point){
+            OrderModify(OrderTicket(),OrderOpenPrice(),OrderOpenPrice()+diff*VFACTOR4,OrderTakeProfit(),NULL,Blue);
         }
         if(b>v*vfactor1){
             if(!OrderClose(OrderTicket(),OrderLots(),Bid,3,White))
@@ -275,8 +276,9 @@ void CheckForClose()
          }
       }
       if(OrderType()==OP_SELL){
+        diff=OrderOpenPrice()-Ask;
         if(OrderOpenPrice()-Ask>=v*Point){
-            OrderModify(OrderTicket(),OrderOpenPrice(),OrderOpenPrice()-v*VFACTOR4*Point,OrderTakeProfit(),NULL,Blue);
+            OrderModify(OrderTicket(),OrderOpenPrice(),OrderOpenPrice()-diff*VFACTOR4,OrderTakeProfit(),NULL,Blue);
         }
         if(-b>v*vfactor1){
             if(!OrderClose(OrderTicket(),OrderLots(),Ask,3,White))
