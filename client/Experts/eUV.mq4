@@ -52,13 +52,13 @@ int CalculateCurrentOrders(string symbol)
   }
 double LotsOptimized()
   {
-   double lot=Lots;
+   double lot=Lots,lot1;
    int    orders=HistoryTotal();     // history orders total
    int    losses=0;                  // number of losses orders without a break
 //--- select lot size
    lot=NormalizeDouble(AccountFreeMargin()*MaximumRisk/1000.0,2);
 //--- calcuulate number of losses orders without a break
-   if(DecreaseFactor>0)
+   if(DecreaseFactor!=0)
      {
       for(int i=orders-1;i>=0;i--)
         {
@@ -67,17 +67,21 @@ double LotsOptimized()
             Print("Error in history!");
             break;
            }
+           
          if(OrderSymbol()!=Symbol() ||OrderMagicNumber()!=MAGICMA|| OrderType()>OP_SELL)
             continue;
          //---
          if(OrderProfit()>0) break;
          if(OrderProfit()<0) losses++;
+         
         }
-      if(losses>1){
+      if(losses>=1){
+         lot1=lot;
          lot=NormalizeDouble(lot-lot*losses/DecreaseFactor,2);
          //vfactor3=vfactor3+0.1*losses/DecreaseFactor;
       }
      }
+     //PrintFormat("orders:%d loses:%d lot:%f lot1:%f",orders,losses,lot,lot);
 //--- return lot size
    if(lot<0.01) lot=0.01;
    //if(vfactor3>5)vfactor3=VFACTOR3;
