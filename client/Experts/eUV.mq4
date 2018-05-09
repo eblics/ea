@@ -19,6 +19,7 @@ double MINV=20;
 input double VFACTOR1=0;
 input double VFACTOR2=1.5;
 input double VFACTOR3=3;
+input double VFACTOR4=0.5;
 input int    MovingPeriod  =144;
 input int    MovingShift   =0;
 input int    PeriodU=5;
@@ -261,6 +262,9 @@ void CheckForClose()
       if(OrderSelect(i,SELECT_BY_POS,MODE_TRADES)==false) break;
       if(OrderMagicNumber()!=MAGICMA || OrderSymbol()!=Symbol()) continue;
       if(OrderType()==OP_BUY){
+        if(Bid-OrderOpenPrice()>=v*Point){
+            OrderModify(OrderTicket(),OrderOpenPrice(),OrderOpenPrice()+v*VFACTOR4*Point,OrderTakeProfit(),NULL,Blue);
+        }
         if(b>v*vfactor1){
             if(!OrderClose(OrderTicket(),OrderLots(),Bid,3,White))
                 Print("OrderClose error ",GetLastError());
@@ -271,6 +275,9 @@ void CheckForClose()
          }
       }
       if(OrderType()==OP_SELL){
+        if(OrderOpenPrice()-Ask>=v*Point){
+            OrderModify(OrderTicket(),OrderOpenPrice(),OrderOpenPrice()-v*VFACTOR4*Point,OrderTakeProfit(),NULL,Blue);
+        }
         if(-b>v*vfactor1){
             if(!OrderClose(OrderTicket(),OrderLots(),Ask,3,White))
                 Print("OrderClose error ",GetLastError());
