@@ -15,7 +15,7 @@ input double DecreaseFactor=3;
 input double PQ=1.232;
 input int    Period=144;
 input int    Gap=36;
-input double    Rate=0.81;
+input double    Rate=0.36;
 input int    HisPeriod=3;
 int Ticket;
 
