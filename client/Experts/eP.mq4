@@ -131,7 +131,7 @@ void CheckForOpen()
     p=wint/loset;
     q=win/lose;
     rate=CountSuccRate();
-    //PrintFormat("checkforopen p:%f q:%f win:%f lose:%f rate:%f",p,q,win,lose,rate);
+    PrintFormat("checkforopen p:%f q:%f win:%f lose:%f rate:%f",p,q,win,lose,rate);
     if(rate>=Rate&&p<1/PQ){
         g=lose-win;
         stoploss=Bid-lose;
@@ -193,7 +193,7 @@ void CheckForClose()
     }
     p=wint/loset;
     q=win/lose;
-    //PrintFormat("checkforclose p:%f q:%f win:%f lose:%f",p,q,win,lose);
+    PrintFormat("checkforclose p:%f q:%f win:%f lose:%f",p,q,win,lose);
     for(i=0;i<OrdersTotal();i++)
     {
       if(OrderSelect(i,SELECT_BY_POS,MODE_TRADES)==false) break;
