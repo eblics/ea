@@ -133,7 +133,6 @@ void CheckForOpen()
     rate=CountSuccRate();
     PrintFormat("checkforopen p:%f q:%f win:%f lose:%f rate:%f",p,q,win,lose,rate);
     if(rate>=Rate&&p<1/PQ){
-        g=lose-win;
         stoploss=Bid-lose;
         takeprofit=Bid+win;
         res=OrderSend(Symbol(),OP_BUY,LotsOptimized(),Ask,3,stoploss,takeprofit,"",MAGICMA,0,Blue);
@@ -145,7 +144,6 @@ void CheckForOpen()
         return;
     }
     if(rate>=Rate&&p>PQ){
-        g=win-lose;
         stoploss=Ask+win; 
         takeprofit=Ask-lose;
         res=OrderSend(Symbol(),OP_SELL,LotsOptimized(),Bid,3,stoploss,takeprofit,"",MAGICMA,0,Red);
