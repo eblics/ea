@@ -16,7 +16,7 @@ input double PQ=1.232;
 input int    Period=144;
 input int    Gap=36;
 input double    Rate=0.36;
-input int    HisPeriod=3;
+input int    HisPeriod=4;
 int Ticket;
 
 
@@ -43,11 +43,11 @@ double LotsOptimized()
 {
     double lot=Lots,lot1;
     int    orders=HistoryTotal();     // history orders total
-    int    losses=0;                  // number of losses orders without a break
+    double    wins=0,losses=0;                  // number of losses orders without a break
     lot=NormalizeDouble(AccountFreeMargin()*MaximumRisk/1000.0,2);
     if(DecreaseFactor!=0)
      {
-      for(int i=orders-1;i>=0;i--)
+      for(int i=orders-1;i>=0&&i>orders-HisPeriod;i--)
         {
          if(OrderSelect(i,SELECT_BY_POS,MODE_HISTORY)==false)
            {
@@ -58,16 +58,16 @@ double LotsOptimized()
          if(OrderSymbol()!=Symbol() ||OrderMagicNumber()!=MAGICMA|| OrderType()>OP_SELL)
             continue;
          //---
-         if(OrderProfit()>0) break;
-         if(OrderProfit()<0) losses++;
+         if(OrderProfit()>0) wins+=OrderProfit();
+         if(OrderProfit()<0) losses+=-OrderProfit();
          
         }
-      if(losses>=1){
-         lot1=lot;
-         lot=NormalizeDouble(lot-lot*losses/DecreaseFactor,2);
+      if(losses!=0){
+         //lot=NormalizeDouble(lot-lot*losses/DecreaseFactor,2);
+         lot=lot*wins/(wins+losses);
       }
      }
-    if(lot<0.01) lot=0.01;
+    if(lot<0.1) lot=0.1;
     return(lot);
 }
 
