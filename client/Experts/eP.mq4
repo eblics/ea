@@ -12,12 +12,12 @@
 input double Lots          =0.1;
 input double MaximumRisk   =0.01;
 input double DecreaseFactor=3;
-input double PQ=1.232;
+input double PQ=1.221;
 input int    Period=144;
 input int    Gap=36;
-input double GapFactor=1.8;
+input double GapFactor=1.6;
 input double    Rate=0.36;
-input int    HisPeriod=4;
+input int    HisPeriod=6;
 int Ticket;
 
 
@@ -200,8 +200,8 @@ void CheckForClose()
       if(OrderType()==OP_BUY){
         stoploss=Bid-Gap*Point;
         if(stoploss>OrderOpenPrice()){
-            stoploss=stoploss+Gap/3*Point;
-            takeprofit=OrderTakeProfit()+Gap/GapFactor*Point;
+            stoploss=stoploss+Gap/GapFactor*Point;
+            takeprofit=OrderTakeProfit();//+Gap/GapFactor*Point;
             if(stoploss>OrderStopLoss())
                 OrderModify(OrderTicket(),OrderOpenPrice(),stoploss,takeprofit,NULL,Blue);
         }
@@ -217,7 +217,7 @@ void CheckForClose()
         stoploss=Ask+Gap*Point;
         if(stoploss<OrderOpenPrice()){
             stoploss=stoploss-Gap/GapFactor*Point;
-            takeprofit=OrderTakeProfit()-Gap/GapFactor*Point;
+            takeprofit=OrderTakeProfit();//-Gap/GapFactor*Point;
             if(stoploss<OrderStopLoss())
                 OrderModify(OrderTicket(),OrderOpenPrice(),stoploss,takeprofit,NULL,Blue);
         }
