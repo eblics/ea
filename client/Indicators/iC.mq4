@@ -80,7 +80,7 @@ double wins=0,loses=0;
 
 double CalcP(double v)
 {
-    return (1+pow(v*10000,4))/0.64;
+    return exp(MathAbs(v*10000));
 }
 //+------------------------------------------------------------------+
 void CalculateSU(int rates_total,int prev_calculated,const double &open[],const double &close[])
@@ -103,7 +103,8 @@ void CalculateSU(int rates_total,int prev_calculated,const double &open[],const 
            d+=CalcP(v);
          }
       }
-      if(d>0) ExtBuffer1[limit-1]=r/d;
+      //if(d==0)d=1;
+      if(d!=0) ExtBuffer1[limit-1]=r/d;
       //ExtBuffer2[limit-1]=d;
       //ExtBuffer2[limit-1]=wins/loses;
       PrintFormat("init win:%f lose:%f",r,d);
@@ -129,7 +130,8 @@ void CalculateSU(int rates_total,int prev_calculated,const double &open[],const 
      {
        d-=CalcP(v);
      }
-     if(d>0)
+     //if(d==0)d=1;
+     if(d!=0)
         ExtBuffer1[i]=r/d;
      //ExtBuffer2[i]=d;
      //if(i<200)
