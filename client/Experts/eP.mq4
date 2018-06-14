@@ -35,9 +35,9 @@ int CalculateCurrentOrders(string symbol)
          if(OrderType()==OP_SELL) sells++;
         }
      }
-
-   if(buys>0) return(buys);
-   else       return(-sells);
+   return buys+sells;
+   //if(buys>0) return(buys);
+   //else       return(-sells);
   }
   
 double LotsOptimized()
