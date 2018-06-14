@@ -144,7 +144,7 @@ void CheckForOpen()
         PrintFormat("openorder p:%f q:%f win:%f lose:%f rate:%f",p,q,win,lose,rate);
         return;
     }
-    if(rate>=Rate&&p>PQ){
+    else if(rate>=Rate&&p>PQ){
         stoploss=Ask+win; 
         takeprofit=Ask-lose;
         res=OrderSend(Symbol(),OP_SELL,LotsOptimized(),Bid,3,stoploss,takeprofit,"",MAGICMA,0,Red);
@@ -155,7 +155,7 @@ void CheckForOpen()
         PrintFormat("openorder p:%f q:%f win:%f lose:%f rate:%f",p,q,win,lose,rate);
         return;
     }
-    if(rate<Rate){
+    else if(rate<Rate){
         int orders=HistoryTotal();
         if(OrderSelect(orders-1,SELECT_BY_POS,MODE_HISTORY)==false)
         {
