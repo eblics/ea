@@ -10,7 +10,7 @@
 #define MAGICMA  19820211
 //--- Inputs
 input double Lots          =0.1;
-input double MaximumRisk   =0.01;
+input double MaximumRisk   =0.25;
 input double DecreaseFactor=3;
 input double PQ=1.221;
 input int    Period=144;
