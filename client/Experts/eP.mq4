@@ -69,6 +69,7 @@ double LotsOptimized()
       }
      }
     if(lot<0.1) lot=0.1;
+    if(lot>200) lot=200;
     return(lot);
 }
 
@@ -133,49 +134,57 @@ void CheckForOpen()
     q=win/lose;
     rate=CountSuccRate();
     PrintFormat("checkforopen p:%f q:%f win:%f lose:%f rate:%f",p,q,win,lose,rate);
-    if(rate>=Rate&&p<1/PQ){
-        stoploss=Bid-lose;
-        takeprofit=Bid+win;
-        res=OrderSend(Symbol(),OP_BUY,LotsOptimized(),Ask,3,stoploss,takeprofit,"",MAGICMA,0,Blue);
-        if(res==-1){
-            PrintFormat("lots:%f price:%f stoploss:%f takeprofit:%f",LotsOptimized(),Bid,stoploss,takeprofit);
-            //ExpertRemove();
-        }
-        PrintFormat("openorder p:%f q:%f win:%f lose:%f rate:%f",p,q,win,lose,rate);
-        return;
-    }
-    else if(rate>=Rate&&p>PQ){
-        stoploss=Ask+win; 
-        takeprofit=Ask-lose;
-        res=OrderSend(Symbol(),OP_SELL,LotsOptimized(),Bid,3,stoploss,takeprofit,"",MAGICMA,0,Red);
-        if(res==-1){
-            PrintFormat("lots:%f price:%f stoploss:%f takeprofit:%f",LotsOptimized(),price,stoploss,takeprofit);
-            //ExpertRemove();
-        }
-        PrintFormat("openorder p:%f q:%f win:%f lose:%f rate:%f",p,q,win,lose,rate);
-        return;
-    }
-    else if(rate<Rate){
-        int orders=HistoryTotal();
-        if(OrderSelect(orders-1,SELECT_BY_POS,MODE_HISTORY)==false)
-        {
-            Print("Error in history!");
-            return;
-        }
-        if(OrderSymbol()!=Symbol() ||OrderMagicNumber()!=MAGICMA|| OrderType()>OP_SELL)
-            return;
-        if(OrderType()==OP_SELL){
-            stoploss=OrderTakeProfit();
+    if(rate>=0){
+        if(p<1/PQ){
+            stoploss=Bid-lose;
             takeprofit=Bid+win;
-            res=OrderSend(Symbol(),OP_BUY,LotsOptimized(),Ask,3,stoploss,takeprofit,"",MAGICMA,0,Blue); 
-        }
-        if(OrderType()==OP_BUY){
-            stoploss=OrderTakeProfit();
+            res=OrderSend(Symbol(),OP_BUY,LotsOptimized(),Ask,3,stoploss,takeprofit,"",MAGICMA,0,Blue);
+            stoploss=Ask+win; 
             takeprofit=Ask-lose;
-            res=OrderSend(Symbol(),OP_SELL,LotsOptimized(),Ask,3,stoploss,takeprofit,"",MAGICMA,0,Blue); 
+            res=OrderSend(Symbol(),OP_SELL,LotsOptimized(),Bid,3,stoploss,takeprofit,"",MAGICMA,0,Red);
+            if(res==-1){
+                PrintFormat("lots:%f price:%f stoploss:%f takeprofit:%f",LotsOptimized(),Bid,stoploss,takeprofit);
+                //ExpertRemove();
+            }
+            PrintFormat("openorder p:%f q:%f win:%f lose:%f rate:%f",p,q,win,lose,rate);
+            return;
         }
-        PrintFormat("openorder p:%f q:%f win:%f lose:%f rate:%f",p,q,win,lose,rate);
+       if(p>PQ){
+            stoploss=Ask+win; 
+            takeprofit=Ask-lose;
+            res=OrderSend(Symbol(),OP_SELL,LotsOptimized(),Bid,3,stoploss,takeprofit,"",MAGICMA,0,Red);
+            stoploss=Bid-lose;
+            takeprofit=Bid+win;
+            res=OrderSend(Symbol(),OP_BUY,LotsOptimized(),Ask,3,stoploss,takeprofit,"",MAGICMA,0,Blue);
+            if(res==-1){
+                PrintFormat("lots:%f price:%f stoploss:%f takeprofit:%f",LotsOptimized(),price,stoploss,takeprofit);
+                //ExpertRemove();
+            }
+            PrintFormat("openorder p:%f q:%f win:%f lose:%f rate:%f",p,q,win,lose,rate);
+            return;
+        }
     }
+    //if(rate<Rate){
+    //    int orders=HistoryTotal();
+    //    if(OrderSelect(orders-1,SELECT_BY_POS,MODE_HISTORY)==false)
+    //    {
+    //        Print("Error in history!");
+    //        return;
+    //    }
+    //    if(OrderSymbol()!=Symbol() ||OrderMagicNumber()!=MAGICMA|| OrderType()>OP_SELL)
+    //        return;
+    //    if(OrderType()==OP_SELL){
+    //        stoploss=OrderTakeProfit();
+    //        takeprofit=Bid+win;
+    //        res=OrderSend(Symbol(),OP_BUY,LotsOptimized(),Ask,3,stoploss,takeprofit,"",MAGICMA,0,Blue); 
+    //    }
+    //    if(OrderType()==OP_BUY){
+    //        stoploss=OrderTakeProfit();
+    //        takeprofit=Ask-lose;
+    //        res=OrderSend(Symbol(),OP_SELL,LotsOptimized(),Ask,3,stoploss,takeprofit,"",MAGICMA,0,Blue); 
+    //    }
+    //    PrintFormat("openorder p:%f q:%f win:%f lose:%f rate:%f",p,q,win,lose,rate);
+    //}
 }
 //+------------------------------------------------------------------+
 //| Check for close order conditions                                 |
@@ -205,13 +214,13 @@ void CheckForClose()
             if(stoploss>OrderStopLoss())
                 OrderModify(OrderTicket(),OrderOpenPrice(),stoploss,takeprofit,NULL,Blue);
         }
-        if(p>=PQ){
-            if(!OrderClose(OrderTicket(),OrderLots(),Bid,3,White))
-                Print("OrderClose error ",GetLastError());
-            else{
-                continue;
-            }
-         }
+        //if(p>=PQ){
+        //    if(!OrderClose(OrderTicket(),OrderLots(),Bid,3,White))
+        //        Print("OrderClose error ",GetLastError());
+        //    else{
+        //        continue;
+        //    }
+        // }
       }
       if(OrderType()==OP_SELL){
         stoploss=Ask+Gap*Point;
@@ -221,13 +230,13 @@ void CheckForClose()
             if(stoploss<OrderStopLoss())
                 OrderModify(OrderTicket(),OrderOpenPrice(),stoploss,takeprofit,NULL,Blue);
         }
-        if(p<=1/PQ){
-            if(!OrderClose(OrderTicket(),OrderLots(),Ask,3,White))
-                Print("OrderClose error ",GetLastError());
-            else{
-                continue;
-             }
-        }
+        //if(p<=1/PQ){
+        //    if(!OrderClose(OrderTicket(),OrderLots(),Ask,3,White))
+        //        Print("OrderClose error ",GetLastError());
+        //    else{
+        //        continue;
+        //     }
+        //}
       }
     }
 }
