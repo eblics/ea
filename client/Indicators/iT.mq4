@@ -18,10 +18,10 @@
 #property  indicator_width2  1
 #property  indicator_width3  1
 #include <MovingAverages.mqh>
-input int Period=200;
+input int Period=144;
 
 //--- buffers
-double ExtPBuffer[];
+//double ExtPBuffer[];
 double ExtQBuffer[];
 double    ExtXBuffer[];
 double ExtHBuffer[];
@@ -32,16 +32,16 @@ int OnInit()
   {
    string short_name;
 //--- 2 additional buffers are used for counting.
-   IndicatorBuffers(3);  
+   IndicatorBuffers(1);  
    IndicatorDigits(Digits);
-   SetIndexBuffer(0,ExtPBuffer);
-   SetIndexBuffer(1,ExtQBuffer);
-   SetIndexBuffer(2,ExtHBuffer);
+   SetIndexBuffer(0,ExtQBuffer);
+   //SetIndexBuffer(1,ExtQBuffer);
+   //SetIndexBuffer(2,ExtHBuffer);
    
 //--- indicator line
    SetIndexStyle(0,DRAW_LINE);
-   SetIndexStyle(1,DRAW_LINE);
-   SetIndexStyle(2,DRAW_LINE);
+   //SetIndexStyle(1,DRAW_LINE);
+   //SetIndexStyle(2,DRAW_LINE);
 //--- name for DataWindow and indicator subwindow label
    short_name="PQ";
    IndicatorShortName(short_name);
@@ -62,16 +62,13 @@ int OnCalculate(const int rates_total,
                 const double &low[],
                 const double &close[],
                 const long &tick_volume[],
-                
-                
-                
                 const long &volume[],
                 const int &spread[])
   {
-   ArraySetAsSeries(ExtPBuffer,false);
+   //ArraySetAsSeries(ExtPBuffer,false);
    ArraySetAsSeries(ExtQBuffer,false);
-   ArraySetAsSeries(ExtXBuffer,false);
-   ArraySetAsSeries(ExtHBuffer,false);
+   //ArraySetAsSeries(ExtXBuffer,false);
+   //ArraySetAsSeries(ExtHBuffer,false);
    ArraySetAsSeries(close,false);
    ArraySetAsSeries(open,false);
    if(rates_total<Period)
@@ -80,44 +77,29 @@ int OnCalculate(const int rates_total,
    CalculatePQ(rates_total,prev_calculated,open,close);
    return(rates_total);
   }
+double EI=2;
 //+------------------------------------------------------------------+
 void CalculatePQ(int rates_total,int prev_calculated,const double &open[],const double &close[])
   {
    int i,limit;
-   double p=0,q=0;
+   double w=0,l=0,co;
 //--- first calculation or number of bars was changed
    if(prev_calculated==0)  
    {
       ArrayInitialize(ExtXBuffer,0);
       limit=Period;
       for(i=0;i<limit;i++){
-        if(close[i]-open[i]>0){ 
-            p+=1;
-        }
-        else if(close[i]-open[i]<0){
-           q+=1;
-        }
+        co+=MathAbs(close[i]-open[i]);
         //ExtHBuffer[i]=0.5;
       }
-      ExtPBuffer[limit-1]=p/Period;
-      ExtQBuffer[limit-1]=q/Period;
+      //ExtPBuffer[limit-1]=p/Period;
+      ExtQBuffer[limit-1]=co;
    }
    else
       limit=prev_calculated-1;
    for(i=limit; i<rates_total && !IsStopped(); i++){
-	  //p=ExtPBuffer[i-1]*Period;
-	  //if(i<Period+1000){
-	  //  PrintFormat("%d %f %f",i,p,p+ExtXBuffer[i-Period]);
-	  //}
-	  p=q=0;
-	  for(int j=i-1;j>=i-Period;j--){
-	    if(close[j]-open[j]>0) p+=1;
-	    if(close[j]-open[j]<0) q+=1;
-	  }
-	  //PrintFormat("p:%f q:%f",p,q);
-	  ExtPBuffer[i]=p/Period;
-	  ExtQBuffer[i]=q/Period;
-	  ExtHBuffer[i]=0.5;
+	  co=co+MathAbs(close[i]-open[i])-MathAbs(close[i-Period]-open[i-Period]);
+	  ExtQBuffer[i]=co;
     }
   }
 
