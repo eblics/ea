@@ -1,7 +1,7 @@
 ﻿//+------------------------------------------------------------------+
-//|                                               ePLN.mq4 |
-//|                   Copyright 2019-Forever, Eblics. |
-//|                                              http://www.nosite.com |
+//|                                                         ePLN.mq4 |
+//|                                  Copyright 2019-Forever, Eblics. |
+//|                                            http://www.nosite.com |
 //+------------------------------------------------------------------+
 /******************************************
  *   This expert based on law of large number and probabilities of prices on history, which is calculated 
