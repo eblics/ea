@@ -16,22 +16,14 @@ input int SLIPPAGE=5;
 //the table of probabilities, 70 to 140
 double PRBT[]={0.00,78.82, 83.37, 99.81, 102.50, 107.35, 110.13, 111.77, 113.56, 119.50} ;
 //the number of lots should be splitted
-int  NLOTS = 10;
-//if a big jump happens(low probability), the inverting jump will happen soon after. BP is the jump number 
-double  BP = 0.186;
-//the value postive divided with negtive, this value is as a indicator to buy or sell
-double PN  = 0.16;
-//start from the price's probability
-double SPP  = 0.2;
-//the lowest price started with
-double LP   = 70;
+int  NLOTS = ArraySize(PRBT);
 //the coefficent of LOTS according to equity, lots=equity/CO_LOTS
-double CO_LOTS = 10000;
+input double CO_LOTS = 10000;
 //the profit gap which can do stoploss.
 input double PG=60;
 
 double getUnitLots(){
-    double maxlots  = AccountBalance()/CO_LOTS;
+    double maxlots  = AccountEquity()/CO_LOTS;
     double unitLots = maxlots/NLOTS;
     unitLots=unitLots>0.01?unitLots:0.01;
     return unitLots;
@@ -65,16 +57,19 @@ void OnTick()
         return;
     }
 
-    maxlots=AccountBalance()/CO_LOTS;
+    maxlots=AccountEquity()/CO_LOTS;
     maxlots=maxlots>0.01 ? maxlots:0.01;
     unitlots=getUnitLots();
+    
     for(i=0;i<OrdersTotal();i++){
         p=OrderOpenPrice();
-        if(Ask-p<PG*Point){
+        if(Bid-p<PG*Point){
             lots+=OrderLots();
         }
         else{
-            stoploss=NormalizeDouble(Ask-(PG-2*SLIPPAGE)*Point,Digits);
+            //stoploss=NormalizeDouble(Ask-(PG-4*SLIPPAGE)*Point,Digits);
+            //stoploss=70;
+            stoploss=p+20*Point;
             if(stoploss>OrderStopLoss()) {
                 if(!OrderModify(OrderTicket(),OrderOpenPrice(),stoploss,OrderTakeProfit(),0,Green)){
                     PrintFormat("OrderModify failed: ticket:%d error:%d ask:%f stoploss:%f orderstoploss:%f p:%f point:%f",OrderTicket(),GetLastError(),Ask,stoploss,OrderStopLoss(),p,Point);
@@ -88,7 +83,7 @@ void OnTick()
     }
     for(i=0;i<ArraySize(PRBT);i++){
         if(Ask<PRBT[i]){
-            pr=(ArraySize(PRBT)-i)*0.1;
+            pr=(ArraySize(PRBT)-i)*1.0/NLOTS;
             bp=PRBT[i-1];
             tp=PRBT[i];
             break;
@@ -96,6 +91,8 @@ void OnTick()
     }
     
     op=0;
+    lots=unitlots*pr;
+    lots=lots<0.01 ? 0.01 :lots;
     for(i=0;i<OrdersTotal();i++){
         ticket=OrderSelect(i,SELECT_BY_POS,MODE_TRADES);
         if(ticket==-1){
@@ -108,13 +105,14 @@ void OnTick()
         }
     }
     if(op==0){
-        if(Ask<(bp+tp)/2 && pr>0.3 ) {
-            ticket = OrderSend(Symbol(),OP_BUY,unitlots,Ask,SLIPPAGE,0,tp,"",MAGICMA,0,Blue);
+        if(Ask<bp+(tp-bp)/4 && pr>=0.1 ) {
+            ticket = OrderSend(Symbol(),OP_BUY,lots,Ask,SLIPPAGE,0,tp,"",MAGICMA,0,Blue);
             PrintFormat("111 openOrder %d pr:%f bp:%f tp:%f op:%f",ticket,pr,bp,tp,op);
         }
     } else{
-        if(Ask-op>PG*Point){
-            ticket = OrderSend(Symbol(),OP_BUY,unitlots,Ask,SLIPPAGE,0,tp,"",MAGICMA,0,Blue);
+        //if(Bid-op>PG*Point && Bid<tp-PG*Point){
+        if(Bid-op>PG*Point && Bid<tp-PG*Point){
+            ticket = OrderSend(Symbol(),OP_BUY,lots,Ask,SLIPPAGE,0,tp,"",MAGICMA,0,Blue);
             if(ticket==-1){
                 PrintFormat("117 openOrder failed:%d",GetLastError());
                 
