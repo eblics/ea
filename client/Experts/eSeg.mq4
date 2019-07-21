@@ -91,7 +91,8 @@ void OnTick()
     }
     
     op=0;
-    lots=unitlots*pr;
+    lots=unitlots;
+    //lots=unitlots*pr;
     lots=lots<0.01 ? 0.01 :lots;
     for(i=0;i<OrdersTotal();i++){
         ticket=OrderSelect(i,SELECT_BY_POS,MODE_TRADES);
