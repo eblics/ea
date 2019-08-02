@@ -20,7 +20,9 @@ int  NLOTS = ArraySize(PRBT);
 //the coefficent of LOTS according to equity, lots=equity/CO_LOTS
 input double CO_LOTS = 10000;
 //the profit gap which can do stoploss.
-input double PG=60;
+input double PG=40;
+
+input double SG=120;
 
 double getUnitLots(){
     double maxlots  = AccountEquity()/CO_LOTS;
@@ -62,6 +64,13 @@ void OnTick()
     unitlots=getUnitLots();
     
     for(i=0;i<OrdersTotal();i++){
+        if(OrderSelect(i,SELECT_BY_POS)==false) continue;
+        if(OrderProfit()<0 && OrderProfit()+OrderSwap()+OrderCommission()>0){
+          OrderClose(OrderTicket(),OrderLots(),Bid,SLIPPAGE,Yellow);
+        }
+    }
+    for(i=0;i<OrdersTotal();i++){
+        if(OrderSelect(i,SELECT_BY_POS)==false) continue;
         p=OrderOpenPrice();
         if(Bid-p<PG*Point){
             lots+=OrderLots();
@@ -70,6 +79,9 @@ void OnTick()
             //stoploss=NormalizeDouble(Ask-(PG-4*SLIPPAGE)*Point,Digits);
             //stoploss=70;
             stoploss=p+20*Point;
+            if(Bid-SG*Point>stoploss){ 
+                 stoploss=Bid-SG*Point;
+             }
             if(stoploss>OrderStopLoss()) {
                 if(!OrderModify(OrderTicket(),OrderOpenPrice(),stoploss,OrderTakeProfit(),0,Green)){
                     PrintFormat("OrderModify failed: ticket:%d error:%d ask:%f stoploss:%f orderstoploss:%f p:%f point:%f",OrderTicket(),GetLastError(),Ask,stoploss,OrderStopLoss(),p,Point);
