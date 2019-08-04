@@ -20,7 +20,7 @@ int  NLOTS = ArraySize(PRBT);
 //the coefficent of LOTS according to equity, lots=equity/CO_LOTS
 input double CO_LOTS = 10000;
 //the profit gap which can do stoploss.
-input double PG=40;
+input double PG=5;
 
 input double SG=120;
 
@@ -78,7 +78,8 @@ void OnTick()
         else{
             //stoploss=NormalizeDouble(Ask-(PG-4*SLIPPAGE)*Point,Digits);
             //stoploss=70;
-            stoploss=p+20*Point;
+            //stoploss=p+SLIPPAGE*Point;
+            stoploss=p;
             if(Bid-SG*Point>stoploss){ 
                  stoploss=Bid-SG*Point;
              }
