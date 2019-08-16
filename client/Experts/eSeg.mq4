@@ -82,7 +82,7 @@ void OnTick()
             stoploss=p;
             if(Bid-SG*Point>stoploss){ 
                  stoploss=Bid-SG*Point;
-             }
+            }
             if(stoploss>OrderStopLoss()) {
                 if(!OrderModify(OrderTicket(),OrderOpenPrice(),stoploss,OrderTakeProfit(),0,Green)){
                     PrintFormat("OrderModify failed: ticket:%d error:%d ask:%f stoploss:%f orderstoploss:%f p:%f point:%f",OrderTicket(),GetLastError(),Ask,stoploss,OrderStopLoss(),p,Point);
