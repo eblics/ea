@@ -119,7 +119,7 @@ void OnTick()
         }
     }
     if(op==0){
-        if(Ask<bp+(tp-bp)/6 && pr>=0.1 ) {
+        if(Ask<bp+(tp-bp)/5 && pr>=0.1 ) {
             ticket = OrderSend(Symbol(),OP_BUY,lots,Ask,SLIPPAGE,0,tp,"",MAGICMA,0,Blue);
             PrintFormat("111 openOrder %d pr:%f bp:%f tp:%f op:%f",ticket,pr,bp,tp,op);
         }
