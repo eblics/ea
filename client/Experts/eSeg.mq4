@@ -8,7 +8,8 @@
 #property description "expert based on law of large numbers and probability"
 
 #define MAXINT   2147483647
-#define MAGICMA  19820211
+#define LTN1  1
+#define LTN2  2
 //splipage 
 input int SLIPPAGE=5;
 //--- Inputs
@@ -20,7 +21,7 @@ int  NLOTS = ArraySize(PRBT);
 //the coefficent of LOTS according to equity, lots=equity/CO_LOTS
 input double CO_LOTS = 10000;
 //the profit gap which can do stoploss.
-input double PG=5;
+input double PG=3;
 
 input double SG=120;
 
@@ -54,35 +55,34 @@ void OnTick()
     double unitlots;
     double stoploss;
     
-    if(spread>SLIPPAGE){
-        Print("64 spread failed");
-        return;
-    }
+    //if(spread>SLIPPAGE){
+    //    Print("64 spread failed");
+    //    return;
+    //}
 
     maxlots=AccountEquity()/CO_LOTS;
     maxlots=maxlots>0.01 ? maxlots:0.01;
     unitlots=getUnitLots();
     
+    //for(i=0;i<OrdersTotal();i++){
+    //    if(OrderSelect(i,SELECT_BY_POS)==false) continue;
+    //    if(OrderProfit()<0 && OrderProfit()+OrderSwap()+OrderCommission()>0){
+    //      OrderClose(OrderTicket(),OrderLots(),Bid,SLIPPAGE,Yellow);
+    //    }
+    //}
     for(i=0;i<OrdersTotal();i++){
-        if(OrderSelect(i,SELECT_BY_POS)==false) continue;
-        if(OrderProfit()<0 && OrderProfit()+OrderSwap()+OrderCommission()>0){
-          OrderClose(OrderTicket(),OrderLots(),Bid,SLIPPAGE,Yellow);
-        }
-    }
-    for(i=0;i<OrdersTotal();i++){
-        if(OrderSelect(i,SELECT_BY_POS)==false) continue;
+        if(OrderSelect(i,SELECT_BY_POS,MODE_TRADES)==false) continue;
+        //don't modify the stoploss of bound line.
+        if(OrderMagicNumber()==LTN1) continue;
         p=OrderOpenPrice();
-        if(Bid-p<PG*Point){
+        if(Bid-p<2*PG*Point){
             lots+=OrderLots();
         }
         else{
-            //stoploss=NormalizeDouble(Ask-(PG-4*SLIPPAGE)*Point,Digits);
-            //stoploss=70;
-            //stoploss=p+SLIPPAGE*Point;
-            stoploss=p;
+            stoploss=p+PG*Point;
             if(Bid-SG*Point>stoploss){ 
                  stoploss=Bid-SG*Point;
-            }
+             }
             if(stoploss>OrderStopLoss()) {
                 if(!OrderModify(OrderTicket(),OrderOpenPrice(),stoploss,OrderTakeProfit(),0,Green)){
                     PrintFormat("OrderModify failed: ticket:%d error:%d ask:%f stoploss:%f orderstoploss:%f p:%f point:%f",OrderTicket(),GetLastError(),Ask,stoploss,OrderStopLoss(),p,Point);
@@ -102,7 +102,7 @@ void OnTick()
             break;
         }
     }
-    
+
     op=0;
     lots=unitlots;
     //lots=unitlots*pr;
@@ -118,15 +118,18 @@ void OnTick()
             if(p>op) op=p;
         }
     }
+    //there is no order in this gap.
     if(op==0){
-        if(Ask<bp+(tp-bp)/5 && pr>=0.1 ) {
-            ticket = OrderSend(Symbol(),OP_BUY,lots,Ask,SLIPPAGE,0,tp,"",MAGICMA,0,Blue);
+        if(Ask==bp && pr>=0.1 ) {
+            ticket = OrderSend(Symbol(),OP_BUY,lots,Ask,SLIPPAGE,0,tp,"",LTN1,0,Blue);
             PrintFormat("111 openOrder %d pr:%f bp:%f tp:%f op:%f",ticket,pr,bp,tp,op);
         }
-    } else{
-        //if(Bid-op>PG*Point && Bid<tp-PG*Point){
-        if(Bid-op>PG*Point && Bid<tp-PG*Point){
-            ticket = OrderSend(Symbol(),OP_BUY,lots,Ask,SLIPPAGE,0,tp,"",MAGICMA,0,Blue);
+    }
+    //if these are orders in this gap,open new one when the price rises 2*GAP. 
+    else{
+       
+        if(Bid-op>2*PG*Point && Bid<tp-2*PG*Point){
+            ticket = OrderSend(Symbol(),OP_BUY,lots,Ask,SLIPPAGE,0,tp,"",LTN2,0,Blue);
             if(ticket==-1){
                 PrintFormat("117 openOrder failed:%d",GetLastError());
                 
