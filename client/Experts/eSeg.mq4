@@ -21,9 +21,9 @@ int  NLOTS = ArraySize(PRBT);
 //the coefficent of LOTS according to equity, lots=equity/CO_LOTS
 input double CO_LOTS = 10000;
 //the profit gap which can do stoploss.
-input double PG=3;
+input double PG=10;
 
-input double SG=120;
+input double SG=100;
 
 double getUnitLots(){
     double maxlots  = AccountEquity()/CO_LOTS;
